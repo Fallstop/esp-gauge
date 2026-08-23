@@ -1,0 +1,5 @@
+Removed Pin From Net: NetName=EXT_5V Pin=SB?-1
+Removed Pin From Net: NetName=USB_VBUS Pin=SB?-1
+Removed Member From Class: ClassName=ESP Guage PCB_Sch Member=SB?
+Added Pin To Net: NetName=USB_VBUS Pin=D6-2
+Added Pin To Net: NetName=EXT_5V Pin=D7-2
