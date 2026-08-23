@@ -1,0 +1,10 @@
+Removed Member From Class: ClassName=ESP Guage PCB_Sch Member=T_1
+Removed Member From Class: ClassName=ESP Guage PCB_Sch Member=T_2
+Removed Member From Class: ClassName=ESP Guage PCB_Sch Member=T_3
+Removed Member From Class: ClassName=ESP Guage PCB_Sch Member=T_4
+Added Component: Designator=H1(HEADER_2.54MM_1x4PIN)
+Added Pin To Net: NetName=GPIO34 Pin=H1-1
+Added Pin To Net: NetName=GPIO35 Pin=H1-2
+Added Pin To Net: NetName=GPIO32 Pin=H1-3
+Added Pin To Net: NetName=GPIO33 Pin=H1-4
+Added Member To Class: ClassName=ESP Guage PCB_Sch Member=Component H1 GPIO
