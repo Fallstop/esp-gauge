@@ -269,7 +269,7 @@ ClassGenCCAutoRoomEnabled=0
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=
+DocumentUniqueId=CGAEYRLU
 
 [Document14]
 DocumentPath=VendorParts\DiodeMBR0520W.PcbLib
@@ -286,7 +286,7 @@ ClassGenCCAutoRoomEnabled=0
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=
+DocumentUniqueId=BPFVKPOC
 
 [Document15]
 DocumentPath=VendorParts\DiodeMBR0520W.SchLib
@@ -320,7 +320,7 @@ ClassGenCCAutoRoomEnabled=0
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=
+DocumentUniqueId=AWGFRWQD
 
 [Document17]
 DocumentPath=VendorParts\ESP32-WROOM-32E-N4.SchLib
@@ -490,7 +490,7 @@ ClassGenCCAutoRoomEnabled=0
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=
+DocumentUniqueId=QSMCAHVF
 
 [Document27]
 DocumentPath=VendorParts\NPNTransistor_BC817-40,215.SchLib
@@ -507,7 +507,7 @@ ClassGenCCAutoRoomEnabled=0
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=
+DocumentUniqueId=ZSRYEOXV
 
 [Document28]
 DocumentPath=VendorParts\UsbFull_HRO_TYPE-C-31-M-12.PcbLib
@@ -558,7 +558,7 @@ ClassGenCCAutoRoomEnabled=0
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=
+DocumentUniqueId=CKKYNWEL
 
 [Document31]
 DocumentPath=VendorParts\ESDProtect_USBLC6-2SC6.SchLib
@@ -575,7 +575,7 @@ ClassGenCCAutoRoomEnabled=0
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=
+DocumentUniqueId=BHALPOKJ
 
 [Document32]
 DocumentPath=VendorParts\PowerIndcutor_IHLP2525CZER1R0M01.PcbLib
@@ -592,7 +592,7 @@ ClassGenCCAutoRoomEnabled=0
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=
+DocumentUniqueId=ICFWKQSB
 
 [Document33]
 DocumentPath=VendorParts\PowerIndcutor_IHLP2525CZER1R0M01.SchLib
@@ -609,7 +609,11 @@ ClassGenCCAutoRoomEnabled=0
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=
+DocumentUniqueId=URBTNNUY
+
+[GeneratedDocument1]
+DocumentPath=Project Outputs for ESP Guage PCB\Design Rule Check - ESP Guage PCB_PCB.html
+DItemRevisionGUID=
 
 [Configuration1]
 Name=Sources
