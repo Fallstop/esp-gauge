@@ -1,0 +1,73 @@
+Change Physical Footprint: Designator=C1 Old Footprint=C0805 New Footprint=C0805
+Change Physical Footprint: Designator=C2 Old Footprint=C0805 New Footprint=C0805
+Change Physical Footprint: Designator=C3 Old Footprint=C0805 New Footprint=C0805
+Change Physical Footprint: Designator=C4 Old Footprint=C0805 New Footprint=C0805
+Change Physical Footprint: Designator=C5 Old Footprint=C0805 New Footprint=C0805
+Change Physical Footprint: Designator=C6 Old Footprint=C0805 New Footprint=C0805
+Change Physical Footprint: Designator=C7 Old Footprint=C0805 New Footprint=C0805
+Change Physical Footprint: Designator=C8 Old Footprint=C0805 New Footprint=C0805
+Change Physical Footprint: Designator=C9 Old Footprint=C0805 New Footprint=C0805
+Change Physical Footprint: Designator=C10 Old Footprint=C0805 New Footprint=C0805
+Change Physical Footprint: Designator=C11 Old Footprint=C0805 New Footprint=C0805
+Change Physical Footprint: Designator=C12 Old Footprint=C0805 New Footprint=C0805
+Change Physical Footprint: Designator=C13 Old Footprint=C0805 New Footprint=C0805
+Change Physical Footprint: Designator=CR1 Old Footprint=SOT23-6L_STM New Footprint=SOT23-6L_STM
+Change Physical Footprint: Designator=D1 Old Footprint=LED_0805-Footprint-1 New Footprint=LED_0805-Footprint-1
+Change Physical Footprint: Designator=D2 Old Footprint=LED_0805-Footprint-1 New Footprint=LED_0805-Footprint-1
+Change Physical Footprint: Designator=D3 Old Footprint=LED_0805-Footprint-1 New Footprint=LED_0805-Footprint-1
+Change Physical Footprint: Designator=D4 Old Footprint=LED_0805-Footprint-1 New Footprint=LED_0805-Footprint-1
+Change Physical Footprint: Designator=D5 Old Footprint=LED_0805-Footprint-1 New Footprint=LED_0805-Footprint-1
+Change Physical Footprint: Designator=D6 Old Footprint=DO-214AC New Footprint=DO-214AC
+Change Physical Footprint: Designator=D7 Old Footprint=DO-214AC New Footprint=DO-214AC
+Change Physical Footprint: Designator=H1 Old Footprint=HEADER_2.54MM_1x4PIN New Footprint=HEADER_2.54MM_1x4PIN
+Change Physical Footprint: Designator=H2 Old Footprint=HEADER_2.54MM_1x4PIN New Footprint=HEADER_2.54MM_1x4PIN
+Change Physical Footprint: Designator=IC1 Old Footprint=ESP32WROOM32EN4 New Footprint=ESP32WROOM32EN4
+Change Physical Footprint: Designator=J1 Old Footprint=FP-B2B-XH-AM_LF_SN-MFG New Footprint=FP-B2B-XH-AM_LF_SN-MFG
+Change Physical Footprint: Designator=J2 Old Footprint=FP-B2B-XH-AM_LF_SN-MFG New Footprint=FP-B2B-XH-AM_LF_SN-MFG
+Change Physical Footprint: Designator=J3 Old Footprint=FP-B2B-XH-AM_LF_SN-MFG New Footprint=FP-B2B-XH-AM_LF_SN-MFG
+Change Physical Footprint: Designator=J4 Old Footprint=FP-B2B-XH-AM_LF_SN-MFG New Footprint=FP-B2B-XH-AM_LF_SN-MFG
+Change Physical Footprint: Designator=J5 Old Footprint=FP-B2B-XH-AM_LF_SN-MFG New Footprint=FP-B2B-XH-AM_LF_SN-MFG
+Change Physical Footprint: Designator=J6 Old Footprint=FP-B2B-XH-AM_LF_SN-MFG New Footprint=FP-B2B-XH-AM_LF_SN-MFG
+Change Physical Footprint: Designator=J7 Old Footprint=HRO_TYPE-C-31-M-12 New Footprint=HRO_TYPE-C-31-M-12
+Change Physical Footprint: Designator=J? Old Footprint=FP-B2B-XH-AM_LF_SN-MFG New Footprint=FP-B2B-XH-AM_LF_SN-MFG
+Change Physical Footprint: Designator=L1 Old Footprint=IND_IHLP-2525CZ-01_VIS New Footprint=IND_IHLP-2525CZ-01_VIS
+Change Physical Footprint: Designator=LED1 Old Footprint=COM-16347_SPK New Footprint=COM-16347_SPK
+Change Physical Footprint: Designator=R1 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R2 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R3 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R4 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R5 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R6 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R7 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R8 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R9 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R10 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R11 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R12 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R13 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R14 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R15 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R16 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R17 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R18 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=R19 Old Footprint=R0805 New Footprint=R0805
+Change Physical Footprint: Designator=SB1 Old Footprint=Solder Bridge Open 0201 New Footprint=Solder Bridge Open 0201
+Change Physical Footprint: Designator=SB2 Old Footprint=Solder Bridge Open 0201 New Footprint=Solder Bridge Open 0201
+Change Physical Footprint: Designator=SB3 Old Footprint=Solder Bridge Closed 0201 New Footprint=Solder Bridge Closed 0201
+Change Physical Footprint: Designator=SB4 Old Footprint=Solder Bridge Closed 0201 New Footprint=Solder Bridge Closed 0201
+Change Physical Footprint: Designator=SB5 Old Footprint=Solder Bridge Closed 0201 New Footprint=Solder Bridge Closed 0201
+Change Physical Footprint: Designator=SB6 Old Footprint=Solder Bridge Closed 0201 New Footprint=Solder Bridge Closed 0201
+Change Physical Footprint: Designator=SB7 Old Footprint=Solder Bridge Closed 0201 New Footprint=Solder Bridge Closed 0201
+Change Physical Footprint: Designator=SB? Old Footprint=Solder Bridge Closed 0201 New Footprint=Solder Bridge Closed 0201
+Change Physical Footprint: Designator=SB? Old Footprint=Solder Bridge Closed 0201 New Footprint=Solder Bridge Closed 0201
+Change Physical Footprint: Designator=T_1 Old Footprint=Test Pad New Footprint=Test Pad
+Change Physical Footprint: Designator=T_2 Old Footprint=Test Pad New Footprint=Test Pad
+Change Physical Footprint: Designator=T_3 Old Footprint=Test Pad New Footprint=Test Pad
+Change Physical Footprint: Designator=T_4 Old Footprint=Test Pad New Footprint=Test Pad
+Change Physical Footprint: Designator=T_5 Old Footprint=Test Pad New Footprint=Test Pad
+Change Physical Footprint: Designator=T_FB1 Old Footprint=Test Pad New Footprint=Test Pad
+Change Physical Footprint: Designator=T_PROG1 Old Footprint=Test Pad New Footprint=Test Pad
+Change Physical Footprint: Designator=U1 Old Footprint=SOIC127P600X180-16N New Footprint=SOIC127P600X180-16N
+Change Physical Footprint: Designator=U2 Old Footprint=SOT23_NEX New Footprint=SOT23_NEX
+Change Physical Footprint: Designator=U3 Old Footprint=SOT23_NEX New Footprint=SOT23_NEX
+Change Physical Footprint: Designator=U4 Old Footprint=SOT6_DRL_TEX New Footprint=SOT6_DRL_TEX

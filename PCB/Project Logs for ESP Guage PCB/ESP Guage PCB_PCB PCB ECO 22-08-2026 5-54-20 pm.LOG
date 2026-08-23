@@ -1,0 +1,4 @@
+Removed Pin From Net: NetName=5V Pin=SB7-2
+Removed Member From Class: ClassName=ESP Guage PCB_Sch Member=SB7
+Added Pin To Net: NetName=5V Pin=U4-4
+Added Member To Class: ClassName=ESP Guage PCB_Sch Member=Component SB? Solder Jumper Normally Closed 0201
