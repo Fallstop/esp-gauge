@@ -1,8 +1,8 @@
-PWM1 = 
-PWM2 = 
-PWM3 = 
-PWM4 = 
-PWM5 = 
-PWM6 =
+PWM1 = 16
+PWM2 = 17
+PWM3 = 18
+PWM4 = 19
+PWM5 = 21
+PWM6 = 22
 
-NeoPixel = 
+NeoPixel = 23
