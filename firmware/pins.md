@@ -1,0 +1,8 @@
+PWM1 = 
+PWM2 = 
+PWM3 = 
+PWM4 = 
+PWM5 = 
+PWM6 =
+
+NeoPixel = 
