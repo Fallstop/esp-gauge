@@ -2,8 +2,9 @@
 import copy
 import math
 import sys
+import tempfile
 from pathlib import Path
-from PySide6.QtCore import Qt, QRectF, QPointF, QStandardPaths, QLockFile
+from PySide6.QtCore import Qt, QRectF, QPointF, QStandardPaths, QLockFile, QTimer
 from PySide6.QtGui import QColor, QPainter, QPen, QFont, QIcon, QPixmap, QAction
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QComboBox, QCheckBox, QSpinBox, QDoubleSpinBox, QGroupBox, QFormLayout,
@@ -11,6 +12,7 @@ from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
 from .model import Settings, METRICS
 from .connection import ports
 from .worker import Worker
+from .board import BoardView, CONNECTORS
 
 STYLE = """
 QWidget { background: #131d26; color: #e5eef2; font-size: 13px; }
@@ -130,7 +132,7 @@ class Window(QWidget):
         self.values, self.metrics = [0]*6, {}
         self.setWindowTitle("ESP Gauge")
         self.setWindowIcon(icon())
-        self.resize(930, 760)
+        self.resize(1140, 840)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(26, 22, 26, 22)
         eyebrow = QLabel("ESP GAUGE  /  DESKTOP INSTRUMENTS")
@@ -155,13 +157,30 @@ class Window(QWidget):
         link.addWidget(refresh)
         link.addWidget(self.auto)
         layout.addLayout(link)
+        body = QHBoxLayout()
+        hardware = QGroupBox("YOUR BOARD  /  TOP VIEW")
+        hardware.setMaximumWidth(410)
+        hardware_layout = QVBoxLayout(hardware)
+        self.board = BoardView()
+        hardware_layout.addWidget(self.board, 1)
+        self.board_label = QLabel("Output 1 · J1 · GPIO 16")
+        self.board_label.setObjectName("eyebrow")
+        hardware_layout.addWidget(self.board_label)
+        hint = QLabel("USB on the left. Select a connector to find its gauge settings.\n\nWhite outlines are derived from your board's 3D model.")
+        hint.setObjectName("muted")
+        hint.setWordWrap(True)
+        hardware_layout.addWidget(hint)
+        body.addWidget(hardware)
         scroll = QScrollArea()
+        self.scroll = scroll
+        self.cards = []
         scroll.setWidgetResizable(True)
         content = QWidget()
         grid = QGridLayout(content)
         self.dials, self.enables, self.assignments = [], [], []
         for i, output in enumerate(settings.outputs):
-            card = QGroupBox(f"OUTPUT {i+1}  ·  GPIO {[16,17,18,19,21,22][i]}")
+            card = QGroupBox(f"OUTPUT {i+1}  ·  {CONNECTORS[i]}  ·  GPIO {[16,17,18,19,21,22][i]}")
+            self.cards.append(card)
             stack = QVBoxLayout(card)
             dial = Dial(i+1)
             stack.addWidget(dial)
@@ -178,12 +197,14 @@ class Window(QWidget):
             calibration = QPushButton("Calibration / response")
             calibration.clicked.connect(lambda checked=False, index=i: self.calibrate(index))
             stack.addWidget(calibration)
-            grid.addWidget(card, i//3, i%3)
+            grid.addWidget(card, i//2, i%2)
             self.dials.append(dial)
             self.enables.append(enabled)
             self.assignments.append(assignment)
         scroll.setWidget(content)
-        layout.addWidget(scroll, 1)
+        body.addWidget(scroll, 1)
+        layout.addLayout(body, 1)
+        self.board.selected.connect(self.select_output)
         options = QHBoxLayout()
         options.addWidget(QLabel("Sample every"))
         self.interval = spin(250, 10000, settings.sample_ms, " ms")
@@ -247,7 +268,15 @@ class Window(QWidget):
         except OSError:
             pass
 
+    def select_output(self, index):
+        self.board.select(index)
+        self.board_label.setText(f"Output {index+1} · {CONNECTORS[index]} · GPIO {[16,17,18,19,21,22][index]}")
+        self.scroll.ensureWidgetVisible(self.cards[index])
+        for i, card in enumerate(self.cards):
+            card.setStyleSheet("QGroupBox { border-color: #5cd8bc; }" if i == index else "")
+
     def calibrate(self, index):
+        self.select_output(index)
         dialog = Calibration(self.draft.outputs[index], index+1, self)
         if dialog.exec():
             candidate = copy.deepcopy(self.draft.outputs[index])
@@ -317,6 +346,9 @@ def main():
     app.setStyle("Fusion")
     app.setStyleSheet(STYLE)
     root = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppConfigLocation))
+    smoke = "--smoke-test" in sys.argv
+    if smoke:
+        root = Path(tempfile.mkdtemp(prefix="esp-gauge-smoke-"))
     root.mkdir(parents=True, exist_ok=True)
     lock = QLockFile(str(root / "instance.lock"))
     if not lock.tryLock(0):
@@ -330,6 +362,11 @@ def main():
         error = f"Settings were not loaded: {exception}. Original file kept until you save."
     window = Window(settings, path, error)
     window.show()
+    if smoke:
+        if window.board.pixmap.isNull():
+            window.quit()
+            return 1
+        QTimer.singleShot(2000, window.quit)
     result = app.exec()
     window.worker.stop()
     window.worker.wait()

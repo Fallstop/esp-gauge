@@ -67,6 +67,10 @@ The `PWM1`–`PWM6` net names and [pin map](firmware/pins.md) correspond to GPIO
 The outputs sometimes called “PDM” are driven here using the board's existing
 5 kHz LEDC PWM approach. No PCB files were changed.
 
+The interactive top view uses static white linework derived from the supplied
+3D model. Click a connector to select its output settings. See
+[artwork provenance and mapping](docs/board-artwork.md).
+
 The pre-existing uncommitted sweep firmware is preserved verbatim at
 [firmware/examples/bench/main.cpp](firmware/examples/bench/main.cpp). It is not
 compiled by the default build and drives all outputs; use it only intentionally.
@@ -82,7 +86,7 @@ g++ -std=c++11 -Wall -Wextra -Werror -Ifirmware/include tests/core_test.cpp -o c
 pio run -d firmware
 python tools/benchmark.py --seconds 30
 python tools/benchmark.py --seconds 30 --visible
-python -m PyInstaller --noconfirm --clean --windowed --name ESP-Gauge --paths desktop desktop/launch.py
+python -m PyInstaller --noconfirm --clean --windowed --name ESP-Gauge --paths desktop --collect-data esp_gauge desktop/launch.py
 ```
 
 The tests include C++ framing/calibration/smoothing/timeout/wraparound checks,

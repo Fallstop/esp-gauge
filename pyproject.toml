@@ -21,3 +21,6 @@ where = ["desktop"]
 [tool.pytest.ini_options]
 pythonpath = ["desktop"]
 testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+esp_gauge = ["assets/*.png", "assets/*.json"]
