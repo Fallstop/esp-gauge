@@ -85,3 +85,9 @@ The updated Mac application installed firmware 2.2.2 from GitHub on the connecte
 The installed Linux AppImage's read-only diagnosis returned version 2.2.2 and 21 discovered sources, with live Claude five-hour/weekly readings and Codex, OpenCode and codeslop/T3 local readings. It is running in the normal KDE session from `~/.local/lib/esp-gauge/ESP-Gauge.AppImage`, launched by `~/.local/bin/esp-gauge`. The preceding native executable is retained as `~/.local/lib/esp-gauge/esp-gauge-before-appimage`. The current Git checkout is `~/Documents/projects/esp-gauge-current`.
 
 The temporary Xvfb display, VNC/proxy processes, SSH forwarding and test browser tab were stopped after verification. Mac installation remains `~/Applications/ESP Gauge.app`. Super Tracker's production endpoint was still unavailable, and the Mac's Claude login was expired; these sources correctly remain unavailable. Publisher signing/notarization and native Windows GUI/USB execution remain outside the validation completed here.
+
+## Header interface refinement, 2.2.3
+
+The six target paths were checked against the labelled `PWM-Targets.svg` source. Native macOS checks exercised every physical header, the shared PWM1/PWM2 boundary, clicks on bare board, and keyboard selection. Hover and selection highlights follow the connector outlines. A geometric check confirmed all six leader routes avoid every neighbouring header; the closest clearance is 12.6 scene units between the PWM2 trace and PWM3.
+
+The supplied `Header.svg` linework is preserved over new face fills. The vector asset was reviewed enlarged and at its actual inspector size, then checked in the installed native Mac application. Svelte diagnostics, production builds and app integrity verification passed. The board reconnected normally, with PWM6 still assigned to CPU usage at 0–82.5% calibration and a 0.5-second response. This update changes the desktop interface; firmware only receives the matching release version.

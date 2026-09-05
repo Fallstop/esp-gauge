@@ -2,6 +2,7 @@
   import { sources, sourceFor, reading, type Channel, type Snapshot } from './model';
   import Dial from './Dial.svelte';
   import SourcePicker from './SourcePicker.svelte';
+  import HeaderIllustration from './HeaderIllustration.svelte';
   let {
     channel,
     port,
@@ -57,11 +58,7 @@
 </div>
 {#if !channel.enabled}
   <div class="empty-inspector">
-    <svg class="connector-icon" viewBox="0 0 100 100" aria-hidden="true"
-      ><path
-        d="m18 27 38-20 27 17v48L46 93 18 76Z M18 27l28 19 37-22M46 46v47M30 31l25-13 16 9-25 14Z M40 64V48m18 9V42"
-      /></svg
-    >
+    <HeaderIllustration />
     <h1>Add a gauge.</h1>
     <p>Connect a gauge to PWM{port + 1}, then match its scale.</p>
     <button class="primary full" onclick={oncalibrate} disabled={!status.connected}

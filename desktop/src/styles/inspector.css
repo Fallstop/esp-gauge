@@ -14,14 +14,6 @@
 .empty-inspector {
   padding-top: 50px;
 }
-.connector-icon {
-  height: 85px;
-  width: 85px;
-  stroke: #869c8f;
-  stroke-width: 1;
-  fill: none;
-  margin: 0 0 25px -7px;
-}
 .empty-inspector p,
 .intro {
   color: var(--muted);
