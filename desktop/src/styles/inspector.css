@@ -1,0 +1,93 @@
+.inspector {
+  border-left: 1px solid var(--line);
+  padding: 30px 0 24px 30px;
+  position: relative;
+  min-width: 0;
+}
+.inspector-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  min-height: 20px;
+}
+.empty-inspector {
+  padding-top: 50px;
+}
+.connector-icon {
+  height: 85px;
+  width: 85px;
+  stroke: #869c8f;
+  stroke-width: 1;
+  fill: none;
+  margin: 0 0 25px -7px;
+}
+.empty-inspector p,
+.intro {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.9;
+  margin: 15px 0 26px;
+  max-width: 270px;
+}
+.primary {
+  padding: 12px 15px;
+  background: var(--mint);
+  border: 1px solid var(--mint);
+  color: #233c2e;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 43px;
+  transition: background 0.15s;
+}
+.primary:hover:not(:disabled) {
+  background: #cce3d5;
+}
+.primary span {
+  font-size: 17px;
+  font-weight: 400;
+}
+.full {
+  width: 100%;
+}
+.text-button {
+  font-size: 10px;
+  padding: 4px 0;
+  color: var(--muted);
+}
+.text-button:hover {
+  color: var(--ink);
+}
+.hint {
+  font-size: 10px !important;
+  line-height: 1.8 !important;
+  color: var(--muted);
+  margin: 9px 0 0 !important;
+}
+.gauge-name {
+  font-family: inherit;
+  font-size: 25px;
+  font-weight: 550;
+  letter-spacing: -0.9px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  width: 100%;
+  padding: 0 0 5px;
+  outline-offset: 3px;
+}
+.gauge-name::placeholder {
+  color: var(--ink);
+  opacity: 1;
+}
+.gauge-name:hover {
+  border-color: var(--line);
+}
+.readout {
+  text-align: center;
+  margin: 4px 0 25px;
+}

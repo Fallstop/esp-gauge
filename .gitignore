@@ -4,3 +4,13 @@ PCB/History/
 PCB/__Previews/
 
 PCB/VendorParts/Project Outputs for GenericShared/
+
+desktop/node_modules/
+desktop/dist/
+desktop/src-tauri/target/
+desktop/src-tauri/gen/
+firmware/.pio/
+.venv/
+__pycache__/
+.DS_Store
+artifacts/

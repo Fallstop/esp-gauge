@@ -1,0 +1,6 @@
+@import './styles/base.css';
+@import './styles/board.css';
+@import './styles/inspector.css';
+@import './styles/controls.css';
+@import './styles/settings.css';
+@import './styles/responsive.css';

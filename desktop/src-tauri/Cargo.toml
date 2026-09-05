@@ -1,0 +1,30 @@
+[package]
+name = "esp-gauge"
+version = "2.0.0"
+description = "Physical instruments for your digital world"
+authors = ["ESP Gauge contributors"]
+edition = "2021"
+default-run = "esp-gauge"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serialport = "4.9"
+sysinfo = "0.37"
+chrono = { version = "0.4", features = ["clock"] }
+battery = "0.7"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
