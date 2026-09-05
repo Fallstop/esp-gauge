@@ -1211,7 +1211,7 @@ dependencies = [
 
 [[package]]
 name = "esp-gauge"
-version = "2.2.1"
+version = "2.2.2"
 dependencies = [
  "base64 0.22.1",
  "battery",

@@ -1,6 +1,6 @@
 [package]
 name = "esp-gauge"
-version = "2.2.1"
+version = "2.2.2"
 description = "Physical instruments for your digital world"
 authors = ["ESP Gauge contributors"]
 edition = "2021"

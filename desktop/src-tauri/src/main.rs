@@ -179,11 +179,9 @@ fn main() {
         .build(tauri::generate_context!())
         .expect("Unable to start ESP Gauge")
         .run(|app, event| match event {
-            tauri::RunEvent::ExitRequested { api, .. } => {
-                if !EXIT_READY.load(Ordering::SeqCst) {
-                    api.prevent_exit();
-                    let _ = tauri::Emitter::emit(app, "quit-requested", ());
-                }
+            tauri::RunEvent::ExitRequested { api, .. } if !EXIT_READY.load(Ordering::SeqCst) => {
+                api.prevent_exit();
+                let _ = tauri::Emitter::emit(app, "quit-requested", ());
             }
             #[cfg(target_os = "macos")]
             tauri::RunEvent::Reopen { .. } => show(app),
