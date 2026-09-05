@@ -1,0 +1,4 @@
+* text=auto eol=lf
+# Signature verification uses these exact bytes on every OS.
+tests/fixtures/firmware.json -text
+tests/fixtures/firmware.json.sig -text

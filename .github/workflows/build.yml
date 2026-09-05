@@ -10,6 +10,10 @@ jobs:
   firmware:
     runs-on: ubuntu-24.04
     steps:
+      - name: Preserve signed fixture bytes
+        if: runner.os == 'Windows'
+        working-directory: ${{ github.workspace }}
+        run: git config --global core.autocrlf false
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv tool install --with pip platformio==6.1.19
@@ -29,6 +33,10 @@ jobs:
       run:
         working-directory: desktop
     steps:
+      - name: Preserve signed fixture bytes
+        if: runner.os == 'Windows'
+        working-directory: ${{ github.workspace }}
+        run: git config --global core.autocrlf false
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
