@@ -58,7 +58,7 @@ The finished executable accepts `--background` to open only the tray and `--diag
 Python tooling uses `uv`:
 
 ```sh
-uv tool install platformio==6.1.19
+uv tool install --with pip platformio==6.1.19
 pio run -d firmware
 pio run -d firmware -t upload --upload-port /dev/cu.usbserial-110
 ```

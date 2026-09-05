@@ -3,23 +3,32 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing version tag to build
+        required: true
+        default: v2.1.0
 permissions:
   contents: write
+env:
+  RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.release_tag || github.ref_name }}
   cancel-in-progress: false
 jobs:
   firmware:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - uses: astral-sh/setup-uv@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: desktop/package-lock.json
-      - run: uv tool install platformio==6.1.19
+      - run: uv tool install --with pip platformio==6.1.19
       - run: pio run -d firmware
       - run: c++ -std=c++17 -Wall -Wextra -Werror -Ifirmware/include tests/engine_test.cpp -o /tmp/engine-test && /tmp/engine-test
       - run: uv run python tools/package_firmware.py artifacts/firmware
@@ -51,6 +60,8 @@ jobs:
         working-directory: desktop
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -86,11 +97,13 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - uses: astral-sh/setup-uv@v6
       - uses: actions/download-artifact@v4
         with:
           path: artifacts/collected
-      - run: uv run python tools/package_release.py artifacts/collected artifacts/release "$GITHUB_REF_NAME"
-      - run: gh release create "$GITHUB_REF_NAME" artifacts/release/* --verify-tag --title "ESP Gauge ${GITHUB_REF_NAME#v}" --notes-file "docs/releases/${GITHUB_REF_NAME#v}.md"
+      - run: uv run python tools/package_release.py artifacts/collected artifacts/release "$RELEASE_TAG"
+      - run: gh release create "$RELEASE_TAG" artifacts/release/* --verify-tag --title "ESP Gauge ${RELEASE_TAG#v}" --notes-file "docs/releases/${RELEASE_TAG#v}.md"
         env:
           GH_TOKEN: ${{ github.token }}
