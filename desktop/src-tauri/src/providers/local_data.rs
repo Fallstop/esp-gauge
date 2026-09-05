@@ -39,7 +39,9 @@ fn active_codex(db: &Connection, dir: &Path) -> Option<f64> {
             if let Ok(file) = File::open(dir.join("thread-writer-locks").join(format!("{id}.lock")))
             {
                 match fs2::FileExt::try_lock_shared(&file) {
-                    Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => count += 1,
+                    Err(e) if e.raw_os_error() == fs2::lock_contended_error().raw_os_error() => {
+                        count += 1
+                    }
                     Ok(()) => {
                         let _ = fs2::FileExt::unlock(&file);
                     }
