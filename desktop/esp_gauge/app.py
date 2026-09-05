@@ -82,6 +82,17 @@ def spin(low, high, value, suffix=""):
     box.setSuffix(suffix)
     return box
 
+
+def percent_spin(maximum, per_mille, suffix):
+    box = QDoubleSpinBox()
+    box.setDecimals(1)
+    box.setRange(0, maximum)
+    box.setSingleStep(1.0)
+    box.setValue(per_mille / 10)
+    box.setSuffix(suffix)
+    return box
+
+
 class Calibration(QDialog):
     def __init__(self, output, number, parent):
         super().__init__(parent)
@@ -91,9 +102,9 @@ class Calibration(QDialog):
         note.setWordWrap(True)
         layout.addWidget(note)
         form = QFormLayout()
-        self.low = spin(0, 880, output.low, " ‰ duty")
-        self.high = spin(0, 880, output.high, " ‰ duty")
-        self.rest = spin(0, 1000, output.rest, " ‰ scale")
+        self.low = percent_spin(88, output.low, "% duty")
+        self.high = percent_spin(88, output.high, "% duty")
+        self.rest = percent_spin(100, output.rest, "% of scale")
         self.response = spin(0, 5000, output.response_ms, " ms")
         self.reverse = QCheckBox("Reverse needle direction")
         self.reverse.setChecked(output.reverse)
@@ -119,8 +130,8 @@ class Calibration(QDialog):
         layout.addWidget(buttons)
 
     def apply(self, output):
-        output.low, output.high = self.low.value(), self.high.value()
-        output.rest, output.response_ms = self.rest.value(), self.response.value()
+        output.low, output.high = round(self.low.value() * 10), round(self.high.value() * 10)
+        output.rest, output.response_ms = round(self.rest.value() * 10), self.response.value()
         output.reverse, output.full_scale = self.reverse.isChecked(), self.scale.value()
         output.validate()
 
