@@ -22,7 +22,7 @@ app = QApplication([])
 app.setQuitOnLastWindowClosed(False)
 app.setStyle("Fusion")
 app.setStyleSheet(STYLE)
-window = Window(Settings(auto_connect=False), Path("/tmp/esp-gauge-validation-settings.json"))
+window = Window(Settings(auto_connect=False), Path("/tmp/esp-gauge-validation-settings.json"), hardware_enabled=False)
 sample_count = [0]
 window.worker.sample_ready.connect(lambda *_: sample_count.__setitem__(0, sample_count[0]+1))
 process = psutil.Process()

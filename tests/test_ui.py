@@ -7,7 +7,7 @@ from esp_gauge.model import Settings
 
 def test_window_hidden_does_not_schedule_dial_paints(tmp_path):
     app=QApplication.instance() or QApplication([])
-    window=Window(Settings(auto_connect=False),tmp_path/'settings.json')
+    window=Window(Settings(auto_connect=False),tmp_path/'settings.json', hardware_enabled=False)
     try:
         window.show(); app.processEvents()
         assert len(window.dials)==6
@@ -27,7 +27,7 @@ def test_board_connectors_follow_actual_schematic(tmp_path):
     from esp_gauge.board import CONNECTORS
     assert CONNECTORS==('J1','J3','J5','J2','J4','J6')
     app=QApplication.instance() or QApplication([])
-    window=Window(Settings(auto_connect=False),tmp_path/'settings.json')
+    window=Window(Settings(auto_connect=False),tmp_path/'settings.json', hardware_enabled=False)
     try:
         assert not window.board.pixmap.isNull()
         window.show(); app.processEvents()

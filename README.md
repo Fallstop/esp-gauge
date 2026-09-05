@@ -35,12 +35,13 @@ Apple Silicon only. Linux builds target glibc 2.35 or newer. See
 
 1. Build the firmware with `pio run -d firmware` (PlatformIO 6.1.18). This command
    does **not** flash. Upload separately with PlatformIO when you intend to replace
-   the board firmware; this implementation session does not flash hardware.
+   the board firmware. Upload is always a separate, intentional action.
 2. Attach your gauge to the correct board output with power disconnected. Confirm
    its electrical rating and any required series resistance for the board.
-3. Plug the board into USB. Choose its CH340 serial port and click **Save & apply**.
-   Selection is explicit: the app does not probe unrelated serial devices. Once
-   saved, it reconnects to that port every five seconds after an interruption.
+3. Plug the board into USB. The app automatically finds its CH340 UART and
+   verifies gauge firmware before applying your saved settings. There is no port
+   picker or auto-connect switch. It checks again every five seconds when
+   disconnected, including when the OS assigns a different port name.
 4. Enable only physically connected outputs. Open **Calibration / response**.
    The initial upper limit is 20% duty; the firmware enforces an absolute 88%
    board ceiling inherited from the bench code. Neither number guarantees a safe

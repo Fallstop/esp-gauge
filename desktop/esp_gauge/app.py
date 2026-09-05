@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
     QPushButton, QComboBox, QCheckBox, QSpinBox, QDoubleSpinBox, QGroupBox, QFormLayout,
     QScrollArea, QGridLayout, QSystemTrayIcon, QMenu, QMessageBox, QDialog, QDialogButtonBox)
 from .model import Settings, METRICS
-from .connection import ports
 from .worker import Worker
 from .board import BoardView, CONNECTORS
 
@@ -126,7 +125,7 @@ class Calibration(QDialog):
         output.validate()
 
 class Window(QWidget):
-    def __init__(self, settings, path, load_error=""):
+    def __init__(self, settings, path, load_error="", *, hardware_enabled=True):
         super().__init__()
         self.settings, self.draft, self.path = settings, copy.deepcopy(settings), path
         self.values, self.metrics = [0]*6, {}
@@ -141,22 +140,10 @@ class Window(QWidget):
         title = QLabel("Your computer. In motion.")
         title.setObjectName("title")
         layout.addWidget(title)
-        self.status_label = QLabel(load_error or "Choose a serial port to connect your board.")
+        self.status_label = QLabel(load_error or "Plug in your gauge board · connects automatically")
         self.status_label.setWordWrap(True)
         self.status_label.setObjectName("muted")
         layout.addWidget(self.status_label)
-        link = QHBoxLayout()
-        self.port = QComboBox()
-        self.port.setMinimumWidth(250)
-        self.refresh_ports()
-        refresh = QPushButton("Refresh ports")
-        refresh.clicked.connect(self.refresh_ports)
-        self.auto = QCheckBox("Connect automatically")
-        self.auto.setChecked(settings.auto_connect)
-        link.addWidget(self.port, 1)
-        link.addWidget(refresh)
-        link.addWidget(self.auto)
-        layout.addLayout(link)
         body = QHBoxLayout()
         hardware = QGroupBox("YOUR BOARD  /  TOP VIEW")
         hardware.setMaximumWidth(410)
@@ -224,9 +211,9 @@ class Window(QWidget):
         save.clicked.connect(self.save)
         footer.addWidget(save)
         layout.addLayout(footer)
-        for signal in (self.interval.valueChanged, self.timeout.valueChanged, self.auto.toggled, self.port.currentIndexChanged):
+        for signal in (self.interval.valueChanged, self.timeout.valueChanged):
             signal.connect(self.dirty)
-        self.worker = Worker(settings)
+        self.worker = Worker(settings, hardware_enabled=hardware_enabled)
         self.worker.sample_ready.connect(self.sample)
         self.worker.status.connect(self.status_label.setText)
         self.tray = QSystemTrayIcon(icon(), self)
@@ -237,8 +224,7 @@ class Window(QWidget):
         pause.setCheckable(True)
         pause.toggled.connect(self.worker.pause)
         menu.addAction(pause)
-        menu.addAction("Disconnect", lambda: self.worker.configure(self.settings, False))
-        menu.addAction("Reconnect", lambda: self.worker.configure(self.settings, True))
+        menu.addAction("Find board now", lambda: self.worker.configure(self.settings))
         menu.addSeparator()
         menu.addAction("Quit", self.quit)
         self.tray.setContextMenu(menu)
@@ -253,20 +239,6 @@ class Window(QWidget):
 
     def dirty(self, *_):
         self.notice.setText("Unsaved changes · Save & apply to update the board.")
-
-    def refresh_ports(self):
-        selected = self.port.currentData() or self.settings.port
-        self.port.clear()
-        self.port.addItem("Select a USB serial port…", "")
-        try:
-            found = ports()
-            for port in found:
-                self.port.addItem(f"{port.device} · {port.description}", port.device)
-            if selected and self.port.findData(selected) < 0:
-                self.port.addItem(f"{selected} · unplugged", selected)
-            self.port.setCurrentIndex(max(0, self.port.findData(selected)))
-        except OSError:
-            pass
 
     def select_output(self, index):
         self.board.select(index)
@@ -289,8 +261,8 @@ class Window(QWidget):
 
     def save(self):
         candidate = copy.deepcopy(self.draft)
-        candidate.port = self.port.currentData() or ""
-        candidate.auto_connect = self.auto.isChecked()
+        candidate.port = ""  # migrate legacy manual connection settings
+        candidate.auto_connect = True
         candidate.sample_ms, candidate.timeout_ms = self.interval.value(), self.timeout.value()
         for i, output in enumerate(candidate.outputs):
             output.enabled = self.enables[i].isChecked()
@@ -301,7 +273,7 @@ class Window(QWidget):
             QMessageBox.warning(self, "Settings could not be saved", str(error))
             return
         self.settings, self.draft = candidate, copy.deepcopy(candidate)
-        self.worker.configure(candidate, bool(candidate.port))
+        self.worker.configure(candidate)
         self.notice.setText("Saved · target preview; physical needle response runs on the board.")
         self.repaint_dials()
 
@@ -359,8 +331,10 @@ def main():
         settings = Settings.load(path)
     except (ValueError, TypeError, KeyError, OSError) as exception:
         settings = Settings(auto_connect=False)
+        for output in settings.outputs:
+            output.enabled = False
         error = f"Settings were not loaded: {exception}. Original file kept until you save."
-    window = Window(settings, path, error)
+    window = Window(settings, path, error, hardware_enabled=not smoke)
     window.show()
     if smoke:
         if window.board.pixmap.isNull():

@@ -5,8 +5,35 @@ from serial.tools import list_ports
 from .model import configuration
 
 
+CH340_USB_ID = (0x1A86, 0x7523)
+
+
 def ports():
-    return sorted(list_ports.comports(), key=lambda p: p.device)
+    """Use USB metadata on Linux, macOS and Windows, never a port-name guess.
+
+    CH340C shares this ID with other CH340 variants: H must identify firmware
+    before any configuration is sent. Prefer macOS callout ports over tty aliases.
+    """
+    candidates = {p.device: p for p in list_ports.comports()
+                  if (p.vid, p.pid) == CH340_USB_ID}
+    return [candidates[name] for name in sorted(candidates)
+            if not (name.startswith('/dev/tty.') and
+                    name.replace('/dev/tty.', '/dev/cu.', 1) in candidates)]
+
+
+class Discovery:
+    """One bounded probe per retry; rotate past busy/non-gauge CH340 devices."""
+    def __init__(self):
+        self.last_attempt = None
+
+    def next_port(self):
+        devices = [p.device for p in ports()]
+        if not devices:
+            self.last_attempt = None
+            return None
+        index = (devices.index(self.last_attempt) + 1) % len(devices) if self.last_attempt in devices else 0
+        self.last_attempt = devices[index]
+        return devices[index]
 
 class Connection:
     def __init__(self):

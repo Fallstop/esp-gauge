@@ -1,6 +1,6 @@
 # Verification record
 
-Verified on Linux/KDE, 5 September 2026 (NZ time). No board was flashed or driven.
+Initial verification on Linux/KDE, 5 September 2026 (NZ time), was performed without flashing or driving a board. Subsequent user-authorized hardware checks are recorded below.
 
 | Check | Result |
 |---|---|
@@ -38,3 +38,18 @@ adapter branch is included for reuse but is not exercised by the pinned build.
 Board geometry is derived from the supplied OBJ, with source hash and connector
 bounds in the asset metadata. Electrical connector mapping is from the existing
 schematic, not assumed connector numbering. See `board-artwork.md`.
+
+## Automatic discovery follow-up
+
+The user subsequently authorized flashing the connected board on `/dev/ttyUSB0`.
+PlatformIO upload succeeded with flash hashes verified, and the board replied
+`ESPGAUGE 1 6 880` after reset. The follow-up always-on discovery change passed
+25 desktop tests, including Linux/Windows/macOS USB metadata filtering, macOS
+callout alias deduplication, hot-plug path changes, skipping non-gauge candidates,
+no repeated scans while connected, and sleeping with no device present.
+
+On the actual Linux-connected CH340 board, discovery ignored an intentionally
+stale saved port and `auto_connect=false`, selected `/dev/ttyUSB0`, identified
+firmware and received position ACKs. Outputs were disabled during this check.
+Physical needle calibration and native Windows/macOS USB-driver behavior still
+require on-device verification. No new firmware changes are needed for discovery.

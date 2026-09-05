@@ -3,7 +3,7 @@ import copy
 import threading
 import time
 from PySide6.QtCore import QThread, Signal
-from .connection import Connection
+from .connection import Connection, Discovery
 from .metrics import Sampler
 from .model import positions
 
@@ -11,13 +11,14 @@ class Worker(QThread):
     sample_ready = Signal(dict, list)
     status = Signal(str)
 
-    def __init__(self, settings):
+    def __init__(self, settings, *, hardware_enabled=True):
         super().__init__()
         self.condition = threading.Condition()
         self.settings = copy.deepcopy(settings)
         self.revision = 0
         self.stopping = False
-        self.want_connection = settings.auto_connect
+        # Test/benchmark isolation only; normal app always discovers automatically.
+        self.hardware_enabled = hardware_enabled
         self.paused = False
         self.test = None
         self.sample_requested = False
@@ -28,11 +29,9 @@ class Worker(QThread):
             self.sample_requested = True
             self.condition.notify()
 
-    def configure(self, settings, connect=None):
+    def configure(self, settings):
         with self.condition:
             self.settings = copy.deepcopy(settings)
-            if connect is not None:
-                self.want_connection = connect
             self.revision += 1
             self.test = None
             self.condition.notify()
@@ -50,7 +49,7 @@ class Worker(QThread):
             self.condition.notify()
 
     def run(self):
-        sampler, connection = Sampler(), Connection()
+        sampler, connection, discovery = Sampler(), Connection(), Discovery()
         revision, retry, next_sample = -1, 0.0, time.monotonic() + 1
         try:
             while True:
@@ -60,7 +59,7 @@ class Worker(QThread):
                     settings = copy.deepcopy(self.settings)
                     changed = revision != self.revision
                     revision = self.revision
-                    wanted, paused = self.want_connection, self.paused
+                    wanted, paused = self.hardware_enabled, self.paused
                     test = self.test
                     requested, self.sample_requested = self.sample_requested, False
                 now = time.monotonic()
@@ -68,15 +67,20 @@ class Worker(QThread):
                     connection.rest()
                     connection.close()
                     retry = 0
-                    self.status.emit("Paused · needles resting" if paused else "Disconnected")
-                if wanted and not paused and settings.port and not connection.serial and now >= retry:
-                    self.status.emit(f"Connecting to {settings.port}…")
+                    self.status.emit("Paused · needles resting" if paused else "Looking for your gauge board…")
+                if wanted and not paused and not connection.serial and now >= retry:
                     try:
-                        connection.connect(settings)
-                        self.status.emit(f"Connected · {settings.port}")
+                        device = discovery.next_port()
+                        if device:
+                            self.status.emit("CH340 found · checking gauge firmware…")
+                            settings.port = device  # runtime only; never trust a saved port
+                            connection.connect(settings)
+                            self.status.emit(f"Connected automatically · {device}")
+                        else:
+                            self.status.emit("Plug in your gauge board · checking automatically")
                     except (OSError, ValueError) as error:
-                        self.status.emit(f"Retrying in 5 s · {error}")
-                        retry = time.monotonic() + 5
+                        self.status.emit(f"Looking for a ready gauge board · {error}")
+                    retry = time.monotonic() + 5
                 if (now >= next_sample or requested) and not paused:
                     try:
                         metrics = sampler.sample()
@@ -98,7 +102,7 @@ class Worker(QThread):
                         break
                     if revision == self.revision and not self.sample_requested:
                         deadline = next_sample if not paused else time.monotonic() + 60
-                        if wanted and settings.port and not paused and not connection.serial:
+                        if wanted and not paused and not connection.serial:
                             deadline = min(deadline, retry)
                         self.condition.wait(max(0.05, deadline - time.monotonic()))
         finally:

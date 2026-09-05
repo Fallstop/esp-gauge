@@ -35,6 +35,7 @@ class Output:
 @dataclass
 class Settings:
     version: int = 1
+    # Legacy fields retained for v1 settings compatibility; discovery ignores them.
     port: str = ""
     auto_connect: bool = True
     sample_ms: int = 1000

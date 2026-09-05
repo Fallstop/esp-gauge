@@ -20,7 +20,7 @@ parser.add_argument('--visible',action='store_true')
 parser.add_argument('--sample-ms',type=int,default=1000)
 args=parser.parse_args()
 app=QApplication([])
-window=Window(Settings(auto_connect=False,sample_ms=args.sample_ms),Path(tempfile.gettempdir())/'esp-gauge-benchmark.json')
+window=Window(Settings(auto_connect=False,sample_ms=args.sample_ms),Path(tempfile.gettempdir())/'esp-gauge-benchmark.json', hardware_enabled=False)
 if args.visible: window.show()
 process=psutil.Process()
 start=time.monotonic(); cpu=process.cpu_times(); samples=[]
