@@ -54,3 +54,9 @@ Host sources are supplied as normalized readings. Built-in standalone source IDs
 ### Calibration ranges (firmware 2.1+)
 
 `min_duty` is an optional per-channel integer, defaulting to zero for older configurations. It must be between zero and `max_duty`; both use tenths of one percent (0–1000). Available readings map through `min_duty + position * (max_duty - min_duty)`, including reversal. Disabled, paused or unavailable gauges always receive zero electrical output. The configuration version and protocol remain 2; `hello.max_duty = 1000` identifies range-capable firmware.
+
+### Waveforms and input ranges (firmware 2.2+)
+
+`wave_sine`, `wave_triangle`, `wave_saw` and `wave_square` generate standalone normalized readings from a shared monotonic clock. Optional `period_s` defaults to 10 seconds and accepts 0.1–86,400. `phase_deg` defaults to zero and accepts 0–360. Sine and triangle begin at the lower endpoint; sawtooth rises then resets; square alternates low/high at half a period. Response smoothing and reversal still apply. Phases restart after power loss; configuration persists.
+
+`input_min` defaults to zero and must be smaller than `scale`; its absolute value and `scale` are limited to 1e9. Host adapters and standalone ESP sensing map raw readings with `(value - input_min) / (scale - input_min)`, clamped to 0–1. Clock, constant and waveform sources keep their defined normalized behavior. Unknown source identifiers and extension fields remain preserved.

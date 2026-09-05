@@ -13,6 +13,7 @@ struct State {
   int timeOffset = 0;
   String sources[6];
   float scales[6] = {};
+  float inputMin[6] = {}, periods[6] = {}, phases[6] = {};
 };
 extern State state;
 } // namespace board

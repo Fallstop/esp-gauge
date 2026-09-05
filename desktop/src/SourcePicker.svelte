@@ -3,9 +3,10 @@
   import { sources, sourceFor, type Source } from './model';
   let {
     value,
+    options = sources,
     disabled = false,
     onchange,
-  }: { value: string; disabled?: boolean; onchange: (source: Source) => void } = $props();
+  }: { value: string; options?: Source[]; disabled?: boolean; onchange: (source: Source) => void } = $props();
   let open = $state(false),
     query = $state(''),
     trigger: HTMLButtonElement;
@@ -15,7 +16,7 @@
     left = $state(0),
     width = $state(280);
   let matches = $derived(
-    sources.filter((s) => `${s.name} ${s.group}`.toLowerCase().includes(query.toLowerCase())),
+    options.filter((s) => `${s.name} ${s.group}`.toLowerCase().includes(query.toLowerCase())),
   );
   async function show() {
     const rect = trigger.getBoundingClientRect();
@@ -62,7 +63,9 @@
   {disabled}
   bind:this={trigger}
   onclick={() => (open ? (open = false) : void show())}
-  ><span>{sourceFor(value).name}</span><span aria-hidden="true">⌄</span></button
+  ><span>{(options.find((s) => s.id === value) ?? sourceFor(value)).name}</span><span aria-hidden="true"
+    >⌄</span
+  ></button
 >
 {#if open}
   <button
@@ -82,7 +85,7 @@
   >
     <input aria-label="Find a source" placeholder="Find a source…" bind:this={search} bind:value={query} />
     <div role="listbox" aria-label="Gauge source" class="source-options">
-      {#each ['Computer', 'Clock', 'On board'] as group}
+      {#each [...new Set(matches.map((s) => s.group))] as group}
         {@const entries = matches.filter((s) => s.group === group)}
         {#if entries.length}<div role="group" aria-label={group}>
             <span class="source-group">{group}</span>{#each entries as source}<button

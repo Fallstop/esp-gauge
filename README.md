@@ -9,6 +9,12 @@ Click a physical header, calibrate the gauge with a live slider, and choose a so
 - Computer: CPU, memory, swap, system-drive space, download, upload, battery where available.
 - Clock: a 24-hour day, 12-hour hand, minutes, seconds.
 - On board: nearby Wi-Fi networks, Bluetooth LE advertisers, internal chip temperature, Wi-Fi signal strength, fixed position.
+- Waveforms: sine, triangle, sawtooth and square, with period and phase. They run on the board after the app exits.
+- Codex: working agents, completed turns, CLI sessions/memory, account tokens and the quota windows your account actually reports.
+- Claude Code: CLI sessions/memory and five-hour/weekly subscription usage with an existing, valid OAuth login.
+- OpenCode: CLI sessions/memory, today's output tokens and recorded cost estimate.
+- codeslop / T3 Code: automatically pairs with the local server for working agents, tasks needing attention, completed turns, tool calls and context-window usage.
+- [Super Tracker](https://supertracker.nz): NZ food-price nowcast, monthly/yearly movement and basket coverage. Uses the production public API, refreshed every five minutes while assigned to a gauge.
 
 Sources have a small registry and a sampling adapter. See [adding sources](docs/extending.md).
 
@@ -53,6 +59,8 @@ cargo build --release --features custom-protocol --manifest-path desktop/src-tau
 
 The finished executable accepts `--background` to open only the tray and `--diagnose` for a read-only JSON report of system metrics and candidate bridges. The diagnosis does not open serial ports.
 
+AI providers are discovered from installed CLIs and their local data directories. Codex quota readings use its supported app-server interface. Claude credentials stay in the existing OS store and are sent only to Anthropic's usage endpoint; ESP Gauge never saves or refreshes them. API-key-only logins do not expose subscription quotas. Idle CLI sessions are labelled separately from working agents. Missing credentials, incompatible schemas and unreachable services yield unavailable readings, rather than invented zeros. See [provider details](docs/providers.md).
+
 ### Firmware
 
 Python tooling uses `uv`:
@@ -86,3 +94,5 @@ The app checks GitHub releases on launch and every six hours. **Settings → Upd
 Signed release assets are produced by `.github/workflows/release.yml` on `v*` tags. All four desktop targets must build and test before publication. `firmware.json` is signed with the same updater key and lists each binary’s offset, size and SHA-256; `latest.json` maps desktop platforms to signed bundles. The public key is in Tauri configuration; the private key stays in the repository’s GitHub Actions secret. Never replace that key for an existing installation base.
 
 Use the Linux **AppImage** for in-app updates. Debian/RPM packages use the system package manager. Platform publisher signing/notarization is separate from the mandatory update signatures.
+
+AppImage builds use the checksum-pinned AppImageKit runtime and gzip compression to support older AppImageLauncher installations. FUSE mounting needs the distribution's libfuse2 package (`libfuse2t64` on newer Ubuntu); `APPIMAGE_EXTRACT_AND_RUN=1` provides the runtime's extraction fallback where mounting is unavailable.

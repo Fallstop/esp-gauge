@@ -6,6 +6,7 @@ export type Channel = {
   max_duty: number;
   response_ms: number;
   scale: number;
+  input_min: number;
   reverse: boolean;
   [key: string]: unknown;
 };
@@ -34,6 +35,7 @@ export type Snapshot = {
   devices: { id: string; path: string }[];
   config: Config | null;
   metrics: Record<string, number>;
+  sources: Source[];
   board: Board;
   paused: boolean;
   error: string | null;
@@ -46,6 +48,7 @@ export const emptyChannel = (): Channel => ({
   max_duty: 0,
   response_ms: 500,
   scale: 100,
+  input_min: 0,
   reverse: false,
 });
 export const emptyConfig = (): Config => ({ version: 2, channels: Array.from({ length: 6 }, emptyChannel) });
@@ -58,6 +61,7 @@ export const emptySnapshot = (): Snapshot => ({
   devices: [],
   config: null,
   metrics: {},
+  sources: [],
   board: {},
   paused: false,
   error: null,
@@ -65,11 +69,12 @@ export const emptySnapshot = (): Snapshot => ({
 export type Source = {
   id: string;
   name: string;
-  group: 'Computer' | 'Clock' | 'On board';
+  group: string;
   unit: string;
   scale: number;
   description: string;
   detail?: string;
+  minimum?: number;
 };
 export const sources: Source[] = [
   {
@@ -204,8 +209,16 @@ export const sources: Source[] = [
     description: 'Hold the needle at a chosen position.',
   },
 ];
-export const sourceFor = (id: string): Source =>
-  sources.find((s) => s.id === id) ?? {
+sources.push(
+  ...[
+    ['wave_sine', 'Sine wave', 'A smooth back-and-forth sweep.'],
+    ['wave_triangle', 'Triangle wave', 'A steady sweep in both directions.'],
+    ['wave_saw', 'Sawtooth', 'Rise steadily, then return to the start.'],
+    ['wave_square', 'Square wave', 'Alternate between the two ends of your gauge.'],
+  ].map(([id, name, description]) => ({ id, name, description, group: 'Waveforms', unit: '%', scale: 100 })),
+);
+export const sourceFor = (id: string, status?: Snapshot): Source =>
+  [...sources, ...(status?.sources ?? [])].find((s) => s.id === id) ?? {
     id,
     name: id,
     group: 'Computer',

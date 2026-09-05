@@ -13,9 +13,10 @@ void indicator::tick() {
   static uint32_t ledAt = 0;
   bool standalone = false;
   for (unsigned i = 0; i < 6; ++i)
-    standalone |= board::state.engine.channels[i].enabled &&
-                  (board::state.sources[i].startsWith("esp_") ||
-                   board::state.sources[i].startsWith("time_") || board::state.sources[i] == "constant");
+    standalone |=
+        board::state.engine.channels[i].enabled &&
+        (board::state.sources[i].startsWith("esp_") || board::state.sources[i].startsWith("wave_") ||
+         board::state.sources[i].startsWith("time_") || board::state.sources[i] == "constant");
   if (uint32_t(now - ledAt) > 50) {
     ledAt = now;
     float breath = .65f + .35f * sinf(now / 1800.0f);

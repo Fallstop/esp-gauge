@@ -68,6 +68,14 @@ int main() {
   assert(gauge::clockValue('s', 30, 0) == .5f);
   assert(gauge::clockValue('d', 43200, -43200) == 0);
   assert(gauge::clockValue('d', -1, 0) > .999f);
+  assert(gauge::waveform('s', 0, 10, 0) == 0);
+  assert(fabs(gauge::waveform('s', 2.5, 10, 0) - .5) < 1e-6);
+  assert(gauge::waveform('s', 5, 10, 0) == 1);
+  assert(gauge::waveform('s', 10, 10, 0) == 0);
+  assert(gauge::waveform('t', 5, 10, 0) == 1);
+  assert(gauge::waveform('r', 2.5, 10, 0) == .25f);
+  assert(gauge::waveform('q', 5, 10, 0) == 1);
+  assert(gauge::waveform('s', 0, 10, 180) == 1);
   puts("engine: boot, port isolation, limits, watchdog, rollover, smoothing, missing sources, reversal, "
        "clocks OK");
 }

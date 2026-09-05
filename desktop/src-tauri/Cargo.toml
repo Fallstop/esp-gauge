@@ -1,6 +1,6 @@
 [package]
 name = "esp-gauge"
-version = "2.1.0"
+version = "2.2.0"
 description = "Physical instruments for your digital world"
 authors = ["ESP Gauge contributors"]
 edition = "2021"
@@ -29,6 +29,9 @@ base64 = "0.22"
 minisign-verify = "0.2"
 semver = "1"
 tauri-plugin-updater = "2"
+rusqlite = { version = "0.38", features = ["bundled"] }
+fs2 = "0.4"
+dirs = "6"
 
 [profile.release]
 codegen-units = 1

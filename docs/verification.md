@@ -55,3 +55,15 @@ Physical full-scale calibration still requires observing the attached needle. Wi
 The connected board retained its user-configured PWM6 full-scale setting of 82.5% through the refactored firmware upload. All hardware checks passed, including 0.5–1% range mapping, unavailable-source rest, invalid ranges, clocks, radio sensing, reset persistence and fragmented serial frames. Live calibration acknowledgement measured 10.95 ms median and 11.42 ms p95. Original configuration was restored after the tests.
 
 Native macOS computer-use checks verified the embedded title bar, PWM6 range editor, live 1% upper and 0.5% lower endpoints, cancellation and the new Updates settings. Signed firmware-manifest tests verify the valid signature and reject a changed byte; fixed flash-region validation rejects writes overlapping NVS. Release installation and automatic-update end-to-end checks follow publication.
+
+The published 2.1.0 macOS package was installed from GitHub. Its native updater downloaded the signed firmware, reflashed and verified the board, and reconnected with PWM6's 82.5% calibration intact. Initial installation was tested by erasing only the application header sector, leaving the configuration partition intact: the UI identified an unknown CH340C, installed the release, then recovered the original device configuration. The normal disconnected view was visually checked with its receded sidebars and dimmed, centred PCB.
+
+## 2.2.0 monitor sources
+
+Twelve Rust tests pass, including quota-window selection, missing versus zero readings, stale public data, incompatible databases and active versus abandoned Codex writer locks. C++ tests cover waveform endpoints and phase offsets. TypeScript/Svelte and Clippy checks pass.
+
+The actual PCB ran all four new waveform generators after host release. PWM6 made a complete sine sweep limited to 1% electrical duty, while all other output registers stayed zero. Invalid periods, pause/rest and reset persistence passed. Calibration acknowledgement was 11.08 ms median, 11.64 ms p95 in the first waveform test. Original configuration was restored after testing.
+
+Native macOS controls were exercised for discovered Codex working agents, real weekly quota readings, sine period/phase edits and Claude's unavailable-login explanation. The local codeslop environment descriptor and read-only database adapters returned live data. Super Tracker's development endpoint returned its documented index schema; the release uses supertracker.nz, whose DNS was not yet live during these checks. Claude's stored OAuth credential was expired, so no live Claude subscription percentage was claimed.
+
+The published Linux 2.1.0 interface was exercised through a temporary Xvfb/noVNC display on ssh-kde, including disconnected rendering and release discovery. Its newer static AppImage runtime conflicted with the desktop's AppImageLauncher 2 installation. A checksum-pinned dynamically linked AppImageKit runtime with gzip compression was then verified on that machine; 2.2.0 packages incorporate this fix. The temporary display is for validation and is removed before handoff.

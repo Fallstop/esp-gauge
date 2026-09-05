@@ -4,7 +4,8 @@
     label = 'Needle position',
     large = false,
     max = 100,
-  }: { position?: number; label?: string; large?: boolean; max?: number } = $props();
+    min = 0,
+  }: { position?: number; label?: string; large?: boolean; max?: number; min?: number } = $props();
   const ticks = Array.from({ length: 21 }, (_, i) => i);
   function point(angle: number, r: number) {
     const a = (angle * Math.PI) / 180;
@@ -19,7 +20,7 @@
     {@const a = 200 + i * 7}{@const p = point(a, 114)}{@const q = point(a, i % 5 === 0 ? 101 : 107)}
     <line x1={p.x} y1={p.y} x2={q.x} y2={q.y} class:major={i % 5 === 0} />
   {/each}
-  <text x="29" y="109">0</text><text x="150" y="43" text-anchor="middle">{max / 2}</text><text
+  <text x="29" y="109">{min}</text><text x="150" y="43" text-anchor="middle">{(min + max) / 2}</text><text
     x="264"
     y="109"
     text-anchor="middle">{max}</text

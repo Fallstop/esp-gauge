@@ -18,6 +18,20 @@ export const updates = $state<UpdateStatus>({
   progress: 0,
   error: null,
 });
+export function newerVersion(candidate: string, installed: string): boolean {
+  const parts = (v: string) =>
+    v
+      .match(/^(\d+)\.(\d+)\.(\d+)/)
+      ?.slice(1)
+      .map(Number);
+  const next = parts(candidate),
+    current = parts(installed);
+  if (!next || !current) return false;
+  for (let i = 0; i < 3; i++) {
+    if (next[i] !== current[i]) return next[i] > current[i];
+  }
+  return installed.includes('-') && !candidate.includes('-');
+}
 export async function runUpdate(command: string, args?: Record<string, unknown>) {
   try {
     await invoke(command, args);

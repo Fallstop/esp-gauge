@@ -23,6 +23,16 @@ bool configuration::valid(JsonVariantConst c) {
     if (!ch["min_duty"].isNull() &&
         (!ch["min_duty"].is<unsigned>() || ch["min_duty"].as<unsigned>() > ch["max_duty"].as<unsigned>()))
       return false;
+    for (const char *field : {"period_s", "phase_deg", "input_min"})
+      if (!ch[field].isNull() && (!ch[field].is<double>() || !isfinite(ch[field].as<double>())))
+        return false;
+    if ((!ch["period_s"].isNull() &&
+         (ch["period_s"].as<double>() < .1 || ch["period_s"].as<double>() > 86400)) ||
+        (!ch["phase_deg"].isNull() &&
+         (ch["phase_deg"].as<double>() < 0 || ch["phase_deg"].as<double>() > 360)) ||
+        (!ch["input_min"].isNull() && (fabs(ch["input_min"].as<double>()) > 1e9 ||
+                                       ch["input_min"].as<double>() >= ch["scale"].as<double>())))
+      return false;
     if (!ch["scale"].is<double>())
       return false;
     double scale = ch["scale"];
@@ -43,6 +53,9 @@ void configuration::apply() {
     out.reverse = c["reverse"];
     board::state.sources[i] = c["source"].as<String>();
     board::state.scales[i] = c["scale"];
+    board::state.inputMin[i] = c["input_min"] | 0.0f;
+    board::state.periods[i] = c["period_s"] | 10.0f;
+    board::state.phases[i] = c["phase_deg"] | 0.0f;
     if (changed || !out.enabled) {
       out.position = 0;
       out.target = 0;

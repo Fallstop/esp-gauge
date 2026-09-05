@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { sourceFor, reading, type Channel, type Snapshot } from './model';
+  import { sources, sourceFor, reading, type Channel, type Snapshot } from './model';
   import Dial from './Dial.svelte';
   import SourcePicker from './SourcePicker.svelte';
   let {
@@ -17,8 +17,14 @@
     oncalibrate: () => void;
     onremove: () => void;
   } = $props();
-  let source = $derived(sourceFor(channel.source)),
-    value = $derived(reading(channel, status));
+  let source = $derived(sourceFor(channel.source, status)),
+    value = $derived(
+      channel.source.startsWith('wave_')
+        ? status.board.available?.[port]
+          ? (status.board.positions?.[port] ?? 0) * 100
+          : undefined
+        : reading(channel, status),
+    );
   let position = $derived(
     status.connected && status.board.available?.[port]
       ? channel.reverse
@@ -76,6 +82,7 @@
   <div class="readout">
     <Dial
       {position}
+      min={channel.input_min ?? 0}
       max={source.group === 'Clock' ? source.scale : source.id === 'constant' ? 100 : channel.scale}
       label="Commanded needle position"
     />
@@ -102,12 +109,13 @@
     <label for="source">Source</label>
     <SourcePicker
       value={channel.source}
+      options={[...sources, ...status.sources]}
       disabled={!status.connected}
-      onchange={(s) => onchange({ source: s.id, scale: s.scale })}
+      onchange={(s) => onchange({ source: s.id, scale: s.scale, input_min: s.minimum ?? 0 })}
     />
     <p class="hint">{source.description}</p>
   </div>
-  {#if ['network_down', 'network_up', 'esp_wifi', 'esp_ble', 'esp_temperature'].includes(source.id)}
+  {#if !['Clock', 'Waveforms'].includes(source.group) && source.id !== 'constant' && !['cpu', 'memory', 'swap', 'disk', 'battery', 'esp_rssi'].includes(source.id)}
     <div class="field inline-field">
       <label for="scale">Full scale</label>
       <div class="number-unit">
@@ -115,12 +123,12 @@
           id="scale"
           type="number"
           min="0.1"
-          max="1000000"
+          max="1000000000"
           step="1"
           value={channel.scale}
           onchange={(e) => {
             const n = Number(e.currentTarget.value);
-            if (n > 0) onchange({ scale: n });
+            if (n > Math.max(0, channel.input_min ?? 0) && n <= 1e9) onchange({ scale: n });
           }}
           disabled={!status.connected}
         /><span>{source.unit}</span>
@@ -141,6 +149,60 @@
         oninput={(e) => onchange({ scale: Number(e.currentTarget.value) })}
         disabled={!status.connected}
       />
+    </div>
+  {/if}
+  {#if source.group === 'Waveforms'}
+    <div class="field inline-field">
+      <label for="period">Period</label>
+      <div class="number-unit">
+        <input
+          id="period"
+          type="number"
+          min="0.1"
+          max="86400"
+          step="0.1"
+          value={Number(channel.period_s ?? 10)}
+          onchange={(e) => {
+            const n = Number(e.currentTarget.value);
+            if (n >= 0.1 && n <= 86400) onchange({ period_s: n });
+          }}
+          disabled={!status.connected}
+        /><span>s</span>
+      </div>
+    </div>
+    <div class="field">
+      <div class="value-row">
+        <label for="phase">Phase</label><span class="mono subtle">{Number(channel.phase_deg ?? 0)}°</span>
+      </div>
+      <input
+        id="phase"
+        type="range"
+        min="0"
+        max="360"
+        step="5"
+        value={Number(channel.phase_deg ?? 0)}
+        oninput={(e) => onchange({ phase_deg: Number(e.currentTarget.value) })}
+        disabled={!status.connected}
+      />
+    </div>
+  {/if}
+  {#if (channel.input_min ?? 0) !== 0 || source.group === 'Super Tracker'}
+    <div class="field inline-field">
+      <label for="input-min">Scale starts at</label>
+      <div class="number-unit">
+        <input
+          id="input-min"
+          type="number"
+          max={channel.scale - 0.1}
+          step="0.1"
+          value={channel.input_min ?? 0}
+          onchange={(e) => {
+            const n = Number(e.currentTarget.value);
+            if (Number.isFinite(n) && n < channel.scale) onchange({ input_min: n });
+          }}
+          disabled={!status.connected}
+        /><span>{source.unit}</span>
+      </div>
     </div>
   {/if}
   <div class="field response-field">
@@ -171,7 +233,7 @@
       disabled={!status.connected}
     />
   </div>
-  {#if source.group !== 'Computer'}<p class="standalone-note">
+  {#if ['Clock', 'On board', 'Waveforms'].includes(source.group)}<p class="standalone-note">
       <span>↳</span> Runs on the board{clock
         ? '. Add Wi-Fi in board settings to recover time after power loss.'
         : ', even without this app.'}

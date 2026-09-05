@@ -2,6 +2,7 @@
 #include "board.h"
 #include "senses.h"
 #include <time.h>
+#include <esp_timer.h>
 
 static constexpr uint8_t PINS[] = {16, 17, 18, 19, 21, 22};
 void outputs::write() {
@@ -28,7 +29,13 @@ void outputs::sample() {
     } else if (s.startsWith("esp_")) {
       float value = 0;
       out.available = senses::sample(s, value);
-      out.target = constrain(value / board::state.scales[i], 0, 1);
+      out.target = constrain(
+          (value - board::state.inputMin[i]) / (board::state.scales[i] - board::state.inputMin[i]), 0, 1);
+    } else if (s.startsWith("wave_")) {
+      out.available = s == "wave_sine" || s == "wave_triangle" || s == "wave_saw" || s == "wave_square";
+      const char shape = s == "wave_triangle" ? 't' : s == "wave_saw" ? 'r' : s == "wave_square" ? 'q' : 's';
+      out.target = gauge::waveform(shape, esp_timer_get_time() / 1000000.0, board::state.periods[i],
+                                   board::state.phases[i]);
     } else if (s == "constant") {
       out.available = true;
       out.target = constrain(board::state.scales[i] / 100, 0, 1);

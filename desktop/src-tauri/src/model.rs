@@ -13,6 +13,8 @@ pub struct Channel {
     pub max_duty: u16,
     pub response_ms: u16,
     pub scale: f64,
+    #[serde(default)]
+    pub input_min: f64,
     pub reverse: bool,
     #[serde(flatten)]
     pub extra: BTreeMap<String, Value>,
@@ -27,6 +29,7 @@ impl Default for Channel {
             max_duty: 0,
             response_ms: 500,
             scale: 100.0,
+            input_min: 0.0,
             reverse: false,
             extra: BTreeMap::new(),
         }
@@ -56,9 +59,22 @@ impl Config {
             );
         }
         for c in &self.channels {
+            for (key, min, max) in [("period_s", 0.1, 86400.0), ("phase_deg", 0.0, 360.0)] {
+                if let Some(value) = c.extra.get(key) {
+                    if !value
+                        .as_f64()
+                        .is_some_and(|v| v.is_finite() && (min..=max).contains(&v))
+                    {
+                        return Err("Waveform settings are outside the supported range.".into());
+                    }
+                }
+            }
             if c.min_duty > c.max_duty
                 || c.max_duty > MAX_DUTY
                 || c.response_ms > 5000
+                || !c.input_min.is_finite()
+                || c.input_min.abs() > 1e9
+                || c.input_min >= c.scale
                 || !c.scale.is_finite()
                 || c.scale <= 0.0
                 || c.scale > 1e9
@@ -86,7 +102,10 @@ pub fn normalize(value: f64, scale: f64) -> f64 {
     }
 }
 pub fn autonomous(source: &str) -> bool {
-    source.starts_with("time_") || source.starts_with("esp_") || source == "constant"
+    source.starts_with("time_")
+        || source.starts_with("esp_")
+        || source == "constant"
+        || source.starts_with("wave_")
 }
 
 #[cfg(test)]

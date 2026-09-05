@@ -2,6 +2,7 @@
   import { untrack, onMount } from 'svelte';
   import { invoke, isTauri } from '@tauri-apps/api/core';
   import Updates from './Updates.svelte';
+  import { updates } from './updateState.svelte';
   import type { Snapshot } from './model';
   let {
     status,
@@ -74,7 +75,9 @@
     >
   </div>
   <div class="settings-tabs" aria-label="Settings sections">
-    <button class:chosen={tab === 'board'} onclick={() => (tab = 'board')}>Board</button>
+    <button class:chosen={tab === 'board'} disabled={updates.busy} onclick={() => (tab = 'board')}
+      >Board</button
+    >
     <button class:chosen={tab === 'updates'} onclick={() => (tab = 'updates')}>Updates</button>
   </div>
   {#if tab === 'updates'}<Updates {status} {onprepare} />{:else}

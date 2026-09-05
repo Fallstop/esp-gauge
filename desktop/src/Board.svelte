@@ -85,7 +85,7 @@
       style:--anchor-y="{p.ty / 7.4}%"
       onclick={() => onselect(i)}
       aria-label="PWM{i + 1}, {config.channels[i].enabled
-        ? sourceFor(config.channels[i].source).name
+        ? sourceFor(config.channels[i].source, status).name
         : 'add gauge'}"
       aria-pressed={selected === i}
     >
@@ -95,7 +95,7 @@
       >
       <span class="port-source"
         >{config.channels[i].enabled
-          ? config.channels[i].name || sourceFor(config.channels[i].source).name
+          ? config.channels[i].name || sourceFor(config.channels[i].source, status).name
           : 'Add gauge'}</span
       >
       {#if config.channels[i].enabled}<span

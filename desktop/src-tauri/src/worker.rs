@@ -28,6 +28,7 @@ pub struct Snapshot {
     pub devices: Vec<Device>,
     pub config: Option<Config>,
     pub metrics: Samples,
+    pub sources: Vec<crate::providers::Source>,
     pub board: Value,
     pub paused: bool,
     pub error: Option<String>,
@@ -43,6 +44,7 @@ impl Default for Snapshot {
             devices: Vec::new(),
             config: None,
             metrics: Samples::new(),
+            sources: Vec::new(),
             board: json!({}),
             paused: false,
             error: None,
@@ -101,6 +103,7 @@ fn publish(app: &AppHandle, shared: &Arc<Mutex<Snapshot>>, state: &Snapshot) {
 fn run(app: AppHandle, rx: mpsc::Receiver<Job>, shared: Arc<Mutex<Snapshot>>) {
     let mut state = Snapshot::default();
     let mut metrics = Metrics::new();
+    let providers = crate::providers::Providers::start();
     let mut link: Option<Link> = None;
     let mut seen: HashMap<String, (Option<String>, Instant)> = HashMap::new();
     let mut probing: Option<(String, mpsc::Receiver<Result<Link, String>>)> = None;
@@ -182,6 +185,14 @@ fn run(app: AppHandle, rx: mpsc::Receiver<Job>, shared: Arc<Mutex<Snapshot>>) {
                         let c: Config = serde_json::from_value(job.command["config"].clone())
                             .map_err(|e| e.to_string())?;
                         c.validate()?;
+                        if c.channels.iter().any(|c| c.source.starts_with("wave_"))
+                            && semver::Version::parse(&l.firmware)
+                                .map_or(true, |v| v < semver::Version::new(2, 2, 0))
+                        {
+                            return Err(
+                                "Update this board’s firmware to use waveform generators.".into()
+                            );
+                        }
                         if l.max_duty < 1000
                             && c.channels
                                 .iter()
@@ -297,6 +308,13 @@ fn run(app: AppHandle, rx: mpsc::Receiver<Job>, shared: Arc<Mutex<Snapshot>>) {
         if last_sample.elapsed() >= Duration::from_millis(750) {
             last_sample = Instant::now();
             state.metrics = metrics.sample();
+            let external = providers.snapshot(state.config.as_ref().is_some_and(|c| {
+                c.channels
+                    .iter()
+                    .any(|c| c.enabled && c.source.starts_with("supertracker_"))
+            }));
+            state.metrics.extend(external.values);
+            state.sources = external.sources;
             if let Some(l) = link.as_mut() {
                 let config = state.config.as_ref().unwrap();
                 let values: Vec<Value> = config
@@ -309,7 +327,7 @@ fn run(app: AppHandle, rx: mpsc::Receiver<Job>, shared: Arc<Mutex<Snapshot>>) {
                             state
                                 .metrics
                                 .get(&c.source)
-                                .map(|v| json!(normalize(*v, c.scale)))
+                                .map(|v| json!(normalize(*v - c.input_min, c.scale - c.input_min)))
                                 .unwrap_or(Value::Null)
                         }
                     })

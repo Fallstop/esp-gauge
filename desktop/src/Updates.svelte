@@ -3,7 +3,7 @@
   import { getVersion } from '@tauri-apps/api/app';
   import { isTauri } from '@tauri-apps/api/core';
   import type { Snapshot } from './model';
-  import { updates, runUpdate } from './updateState.svelte';
+  import { updates, runUpdate, newerVersion } from './updateState.svelte';
   let { status, onprepare }: { status: Snapshot; onprepare: () => Promise<boolean> } = $props();
   let version = $state(''),
     target = $state(''),
@@ -75,7 +75,9 @@
         {status.connected && path === status.path
           ? status.firmware === updates.firmware_version
             ? 'Reinstall firmware'
-            : 'Update firmware'
+            : newerVersion(updates.firmware_version, status.firmware)
+              ? 'Update firmware'
+              : `Install firmware ${updates.firmware_version}`
           : 'Install firmware'} <span>↗</span>
       </button>
       <p class="hint">Keep USB connected during installation. Your gauge settings stay on the board.</p>

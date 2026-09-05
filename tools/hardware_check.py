@@ -122,6 +122,30 @@ try:
     assert status['positions'][3] >= .5
     print('All four clock sources run after host release: OK')
 
+    if tuple(map(int, hello['firmware'].split('.')[:2])) >= (2, 2):
+        waves = copy.deepcopy(safe)
+        for i, source in enumerate(['wave_sine', 'wave_triangle', 'wave_saw', 'wave_square']):
+            waves['channels'][i].update(source=source, enabled=True, period_s=1.0, phase_deg=0)
+        waves['channels'][5].update(source='wave_sine', enabled=True, max_duty=10, period_s=1.0)
+        ok('config', config=waves)
+        bad = copy.deepcopy(waves)
+        bad['channels'][5]['period_s'] = 0
+        assert not request('config', config=bad)['ok']
+        ok('release')
+        samples = []
+        for _ in range(30):
+            time.sleep(.05)
+            status = ok('status')
+            assert all(status['available'][i] for i in [0,1,2,3,5]), status
+            assert status['duties'][:5] == [0]*5 and 0 <= status['duties'][5] <= 40, status
+            samples.append(status['positions'][5])
+        assert max(samples) > .95 and min(samples) < .05, samples
+        ok('live', values=[1]*6, paused=True)
+        time.sleep(.05)
+        assert ok('status')['duties'] == [0]*6
+        ok('release')
+        print('Four autonomous waveforms, complete PWM6 sweep at 1%, invalid period and pause: OK')
+
     sense = copy.deepcopy(safe)
     for i, source in enumerate(['esp_wifi', 'esp_ble', 'esp_temperature']):
         sense['channels'][i].update(source=source, enabled=True)

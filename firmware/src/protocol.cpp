@@ -92,8 +92,8 @@ static void command(const char *line) {
       board::state.hostLive = true;
       board::state.paused = cmd["paused"];
       for (unsigned i = 0; i < 6; i++)
-        if (!board::state.sources[i].startsWith("time_") && !board::state.sources[i].startsWith("esp_") &&
-            board::state.sources[i] != "constant") {
+        if (!board::state.sources[i].startsWith("time_") && !board::state.sources[i].startsWith("wave_") &&
+            !board::state.sources[i].startsWith("esp_") && board::state.sources[i] != "constant") {
           board::state.engine.channels[i].target = values[i].isNull() ? 0 : values[i].as<float>();
           board::state.engine.channels[i].available = !values[i].isNull();
         }

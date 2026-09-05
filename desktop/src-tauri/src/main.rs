@@ -4,6 +4,7 @@ mod firmware_flash;
 mod mac_menu;
 mod metrics;
 mod model;
+mod providers;
 mod releases;
 mod transport;
 mod updates;
@@ -78,9 +79,10 @@ fn main() {
     if std::env::args().any(|arg| arg == "--diagnose") {
         let mut metrics = metrics::Metrics::new();
         std::thread::sleep(std::time::Duration::from_millis(800));
+        let providers = providers::diagnose();
         println!(
             "{}",
-            json!({"version":env!("CARGO_PKG_VERSION"), "platform":std::env::consts::OS, "metrics":metrics.sample(), "usb_candidates":transport::candidates()})
+            json!({"version":env!("CARGO_PKG_VERSION"), "platform":std::env::consts::OS, "metrics":metrics.sample(), "usb_candidates":transport::candidates(),"sources":providers.sources,"provider_metrics":providers.values})
         );
         return;
     }

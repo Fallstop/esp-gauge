@@ -70,3 +70,21 @@ inline float clockValue(const char unit, int64_t epoch, int offset) {
   }
 }
 } // namespace gauge
+
+namespace gauge {
+inline float waveform(const char shape, double seconds, double period, double phase) {
+  double p = fmod(seconds / period + phase / 360.0, 1.0);
+  if (p < 0)
+    p += 1;
+  switch (shape) {
+  case 't':
+    return float(1.0 - fabs(2.0 * p - 1.0));
+  case 'r':
+    return float(p);
+  case 'q':
+    return p < .5 ? 0 : 1;
+  default:
+    return float((1.0 - cos(6.283185307179586 * p)) * .5);
+  }
+}
+} // namespace gauge

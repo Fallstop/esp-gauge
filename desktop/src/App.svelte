@@ -7,7 +7,7 @@
   import Inspector from './Inspector.svelte';
   import Calibration from './Calibration.svelte';
   import Settings from './Settings.svelte';
-  import { startUpdates, updates } from './updateState.svelte';
+  import { startUpdates, updates, newerVersion } from './updateState.svelte';
   let status = $state<Snapshot>(emptySnapshot()),
     config = $state<Config>(emptyConfig());
   let selected = $state(0),
@@ -20,6 +20,7 @@
     revision = 0,
     timer: ReturnType<typeof setTimeout> | undefined;
   let saveTask: Promise<boolean> | null = null;
+  let installing = $derived(updates.busy && updates.stage !== 'Checking releases');
   async function send(op: string, data: Record<string, unknown> = {}) {
     return invoke('command', { command: { op, device: status.device, ...data } });
   }
@@ -71,6 +72,7 @@
     return saveTask;
   }
   function change(patch: Partial<Channel>) {
+    if (installing) return;
     config.channels[selected] = { ...config.channels[selected], ...patch };
     pending = true;
     configDevice = status.device;
@@ -79,6 +81,7 @@
     timer = setTimeout(() => void save(), 220);
   }
   async function calibrate() {
+    if (installing) return;
     error = '';
     clearTimeout(timer);
     if (pending && !(await save())) return;
@@ -106,6 +109,7 @@
     return true;
   }
   async function select(n: number) {
+    if (installing) return;
     if (calibrating) await cancel();
     selected = n;
     settings = false;
@@ -216,6 +220,7 @@
       {#if status.devices.length > 1}<select
           class="board-select"
           aria-label="Connected board"
+          disabled={installing}
           value={status.path}
           onchange={async (e) => {
             if (calibrating) await cancel();
@@ -237,7 +242,7 @@
         aria-label={status.paused ? 'Resume gauges' : 'Pause gauges'}
         title={status.paused ? 'Resume gauges' : 'Pause gauges'}
         onclick={pause}
-        disabled={!status.connected || !enabled}
+        disabled={!status.connected || !enabled || installing}
         ><svg viewBox="0 0 24 24" aria-hidden="true"
           >{#if status.paused}<path d="m8 5 10 7-10 7Z" />{:else}<path d="M8 5v14M16 5v14" />{/if}</svg
         ></button
@@ -246,7 +251,7 @@
         class="icon-button"
         class:active={settings}
         class:has-update={!!updates.app_version ||
-          !!(status.connected && updates.firmware_version && updates.firmware_version !== status.firmware)}
+          !!(status.connected && newerVersion(updates.firmware_version, status.firmware))}
         aria-label="Board settings"
         title="Board settings"
         onclick={boardSettings}
@@ -255,7 +260,7 @@
     </div>
   </header>
   <main>
-    <section class="board-panel" aria-label="Gauge outputs">
+    <section class="board-panel" aria-label="Gauge outputs" inert={installing}>
       <Board {config} {status} {selected} onselect={(n) => void select(n)} />
       <div class="disconnected-message" aria-live="polite">
         {!status.connected ? 'Connect your board to begin.' : ''}
@@ -296,7 +301,7 @@
     </section>
     <aside
       class="inspector"
-      inert={!status.connected && !settings}
+      inert={(!status.connected || installing) && !settings}
       aria-label={settings ? 'Board settings' : `PWM${selected + 1} settings`}
     >
       {#if settings}<Settings {status} {send} onprepare={prepareUpdate} onclose={() => (settings = false)} />
