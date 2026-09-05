@@ -81,7 +81,7 @@ jobs:
           workspaces: desktop/src-tauri
           shared-key: ${{ matrix.os }}
       - if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libudev-dev libxdo-dev patchelf
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libudev-dev libxdo-dev patchelf squashfs-tools
       - name: Use compatible AppImage runtime
         if: runner.os == 'Linux'
         run: |
@@ -92,9 +92,28 @@ jobs:
       - run: npm run build
       - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
       - run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-      - run: npm run tauri build
+      - run: npm run tauri build -- --verbose
         env:
-          LDAI_COMP: gzip
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+      - name: Package compatible Linux filesystem and sign it
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          # appimagetool's bundled compressor only supports zstd, which the
+          # AppImageLauncher-compatible runtime cannot read. Use system gzip.
+          images=(src-tauri/target/release/bundle/appimage/*.AppImage)
+          test "${#images[@]}" -eq 1
+          image="${images[0]}"
+          offset=$(stat -c %s "$LDAI_RUNTIME_FILE")
+          unsquashfs -no-progress -offset "$offset" -d "$RUNNER_TEMP/gauge-appdir" "$image"
+          mksquashfs "$RUNNER_TEMP/gauge-appdir" "$RUNNER_TEMP/gauge.squashfs" -comp gzip -all-root -noappend -no-progress -b 1M
+          cat "$LDAI_RUNTIME_FILE" "$RUNNER_TEMP/gauge.squashfs" > "$image.repacked"
+          chmod 755 "$image.repacked"
+          mv "$image.repacked" "$image"
+          rm "$image.sig"
+          npm run tauri signer sign -- "$image"
+        env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
       - name: Exercise packaged Linux executable
