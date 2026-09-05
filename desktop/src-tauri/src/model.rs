@@ -2,12 +2,14 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 
-pub const MAX_DUTY: u16 = 880;
+pub const MAX_DUTY: u16 = 1000;
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Channel {
     pub enabled: bool,
     pub name: String,
     pub source: String,
+    #[serde(default)]
+    pub min_duty: u16,
     pub max_duty: u16,
     pub response_ms: u16,
     pub scale: f64,
@@ -21,6 +23,7 @@ impl Default for Channel {
             enabled: false,
             name: String::new(),
             source: "cpu".into(),
+            min_duty: 0,
             max_duty: 0,
             response_ms: 500,
             scale: 100.0,
@@ -53,7 +56,8 @@ impl Config {
             );
         }
         for c in &self.channels {
-            if c.max_duty > MAX_DUTY
+            if c.min_duty > c.max_duty
+                || c.max_duty > MAX_DUTY
                 || c.response_ms > 5000
                 || !c.scale.is_finite()
                 || c.scale <= 0.0
@@ -92,9 +96,9 @@ mod tests {
     fn unsafe_config_rejected() {
         let mut c = Config::default();
         assert!(c.validate().is_ok());
-        c.channels[5].max_duty = 881;
+        c.channels[5].max_duty = 1001;
         assert!(c.validate().is_err());
-        c.channels[5].max_duty = 880;
+        c.channels[5].max_duty = 1000;
         c.channels[5].scale = f64::NAN;
         assert!(c.validate().is_err());
         c.channels[5].scale = 1.0;

@@ -1,6 +1,6 @@
 [package]
 name = "esp-gauge"
-version = "2.0.0"
+version = "2.1.0"
 description = "Physical instruments for your digital world"
 authors = ["ESP Gauge contributors"]
 edition = "2021"
@@ -22,6 +22,13 @@ serialport = "4.9"
 sysinfo = "0.37"
 chrono = { version = "0.4", features = ["clock"] }
 battery = "0.7"
+espflash = { version = "4", default-features = false, features = ["serialport"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+sha2 = "0.10"
+base64 = "0.22"
+minisign-verify = "0.2"
+semver = "1"
+tauri-plugin-updater = "2"
 
 [profile.release]
 codegen-units = 1

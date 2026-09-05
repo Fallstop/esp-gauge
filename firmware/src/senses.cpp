@@ -7,7 +7,9 @@
 #include <atomic>
 
 // Arduino otherwise releases Bluetooth RAM before a source can be selected.
-extern "C" bool btInUse() { return true; }
+extern "C" bool btInUse() {
+  return true;
+}
 
 namespace senses {
 static bool scanning = false, requested = false, bleStarted = false, bleAttempted = false;

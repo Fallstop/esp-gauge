@@ -6,7 +6,7 @@ int main() {
   for (unsigned i = 0; i < 6; i++)
     assert(e.duty(i) == 0);
   assert(!e.calibrate(6, 10, 0));
-  assert(!e.calibrate(5, 881, 0));
+  assert(!e.calibrate(5, 1001, 0));
   assert(e.calibrate(5, 20, 10));
   assert(e.duty(5) == 81);
   for (unsigned i = 0; i < 5; i++)
@@ -14,7 +14,7 @@ int main() {
   e.tick(1511, 10);
   assert(e.calibration == -1);
   assert(e.duty(5) == 0);
-  assert(e.calibrate(5, 880, 0xfffffff0));
+  assert(e.calibrate(5, 1000, 0xfffffff0));
   e.tick(0x00000010, 32);
   assert(e.calibration == 5);
   e.tick(0x00000600, 1520);
@@ -43,7 +43,24 @@ int main() {
   c.target = 10;
   c.maxDuty = 65000;
   e.tick(13000, 10000);
-  assert(e.duty(5) <= 880 * 4095 / 1000);
+  assert(e.duty(5) <= 1000 * 4095 / 1000);
+  c.minDuty = 100;
+  c.maxDuty = 900;
+  c.response = 0;
+  c.target = 0;
+  e.tick(14000, 10);
+  assert(e.duty(5) == 409);
+  c.target = .5f;
+  e.tick(14010, 10);
+  assert(e.duty(5) == 2047);
+  c.reverse = true;
+  c.target = 1;
+  e.tick(14020, 10);
+  assert(e.duty(5) == 409);
+  c.available = false;
+  assert(e.duty(5) == 0);
+  assert(e.calibrate(0, 1000, 14030));
+  assert(e.duty(0) == 4095);
   assert(gauge::clockValue('d', 0, 0) == 0);
   assert(gauge::clockValue('d', 43200, 0) == .5f);
   assert(gauge::clockValue('h', 21600, 0) == .5f);

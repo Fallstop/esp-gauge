@@ -11,6 +11,8 @@ pub struct Link {
     buffer: Vec<u8>,
     pub path: String,
     pub device: String,
+    pub firmware: String,
+    pub max_duty: u16,
 }
 pub fn candidates() -> Vec<String> {
     serialport::available_ports()
@@ -28,7 +30,7 @@ pub fn is_identity(v: &Value) -> bool {
         && v["product"] == "ESP Gauge"
         && v["protocol"] == 2
         && v["channels"] == 6
-        && v["max_duty"] == 880
+        && matches!(v["max_duty"].as_u64(), Some(880 | 1000))
         && v["device"].as_str().is_some_and(|s| !s.is_empty())
 }
 impl Link {
@@ -48,6 +50,8 @@ impl Link {
             buffer: Vec::new(),
             path: path.into(),
             device: String::new(),
+            firmware: String::new(),
+            max_duty: 0,
         };
         // One bounded read-only query. Non-gauge CH340s are released and not streamed to.
         let reply = link.request_timeout(json!({"op":"hello"}), Duration::from_millis(700))?;
@@ -55,6 +59,8 @@ impl Link {
             return Err("Not ESP Gauge protocol 2".into());
         }
         link.device = reply["device"].as_str().unwrap().into();
+        link.firmware = reply["firmware"].as_str().unwrap_or("2.0.0").into();
+        link.max_duty = reply["max_duty"].as_u64().unwrap() as u16;
         Ok(link)
     }
     pub fn request(&mut self, cmd: Value) -> Result<Value, String> {
@@ -149,6 +155,8 @@ mod tests {
             buffer: Vec::new(),
             path: "test".into(),
             device: String::new(),
+            firmware: String::new(),
+            max_duty: 0,
         };
         let reply = link.request(json!({"op":"hello"})).unwrap();
         assert!(is_identity(&reply));

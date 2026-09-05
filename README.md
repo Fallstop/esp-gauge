@@ -14,12 +14,12 @@ Sources have a small registry and a sampling adapter. See [adding sources](docs/
 
 ## First connection
 
-1. Install protocol-2 firmware once (instructions below). The app does not reprogram the board to change settings.
+1. Open **Settings → Updates** to install firmware on your selected CH340C board. Firmware and app versions come from signed GitHub releases.
 2. Connect a suitably rated gauge to a header and attach USB. The app discovers CH340C bridges and checks the gauge protocol before streaming. Other CH340 boards are released.
-3. Select **PWM1–PWM6 → Add gauge**. Output begins at zero. Raise the slider slowly while watching the physical needle. Choose **This is 100%** at the gauge’s full-scale mark.
+3. Select **PWM1–PWM6 → Add gauge**. Output begins at zero. Move the range slider’s upper end slowly to the full-scale mark, and its lower end to the zero mark if needed. Choose **Use this range**.
 4. Choose a source. Change sources, response and direction directly; no save/apply button.
 
-The rear row is PWM1, PWM2, PWM3 left to right; the front row is PWM4, PWM5, PWM6. GPIOs are 16, 17, 18, 19, 21 and 22. The NeoPixel is GPIO23. PWM is 5 kHz at 12-bit resolution; the inherited board limit is 88% duty. That ceiling is a firmware bound, not a guarantee of compatibility with a particular meter.
+The rear row is PWM1, PWM2, PWM3 left to right; the front row is PWM4, PWM5, PWM6. GPIOs are 16, 17, 18, 19, 21 and 22. The NeoPixel is GPIO23. PWM is 5 kHz at 12-bit resolution; the range is 0–100% duty. Size the series resistor for your particular meter.
 
 The board has no load/needle feedback, so gauge presence cannot be reliably detected. The preview is commanded position. Empty ports remain off until explicitly added. Calibration expires after 1.5 seconds without renewal; PC-driven gauges rest after three seconds without readings. Standalone sources continue while powered.
 
@@ -63,7 +63,7 @@ pio run -d firmware
 pio run -d firmware -t upload --upload-port /dev/cu.usbserial-110
 ```
 
-Change the upload port for your machine. The firmware’s dependencies are pinned. A 3 MB application partition leaves room for Wi-Fi and BLE. Uploading leaves the NVS configuration partition intact. The ordinary desktop workflow never requires a firmware upload.
+Change the upload port for your machine. The firmware’s dependencies are pinned. A 3 MB application partition leaves room for Wi-Fi and BLE. Uploading leaves the NVS configuration partition intact. The desktop app installs firmware directly using its native ESP32 flasher; neither Python nor PlatformIO is needed by app users. It verifies signed release metadata and every binary checksum before writing, and leaves the NVS region untouched.
 
 ### Verification
 
@@ -78,3 +78,11 @@ uv run --with pyserial python tools/hardware_check.py --port /dev/cu.usbserial-1
 ```
 
 See [protocol](docs/protocol.md), [design](docs/design.md), [verification record](docs/verification.md), and [third-party notices](THIRD_PARTY.md). CI is configured for all three desktop platforms and firmware. The Mac bundle receives an ad-hoc integrity signature; distribution packages have no publisher signature or notarization. Public distribution should add platform signing and notarization.
+
+## Releases and updates
+
+The app checks GitHub releases on launch and every six hours. **Settings → Updates** installs available app updates or board firmware. App installation restarts ESP Gauge; configuration edits are committed first. Unidentified CH340C bridges are offered for explicit initial installation and never flashed automatically. Existing 2.0 firmware connects normally but requires an update before using range calibration.
+
+Signed release assets are produced by `.github/workflows/release.yml` on `v*` tags. All four desktop targets must build and test before publication. `firmware.json` is signed with the same updater key and lists each binary’s offset, size and SHA-256; `latest.json` maps desktop platforms to signed bundles. The public key is in Tauri configuration; the private key stays in the repository’s GitHub Actions secret. Never replace that key for an existing installation base.
+
+Use the Linux **AppImage** for in-app updates. Debian/RPM packages use the system package manager. Platform publisher signing/notarization is separate from the mandatory update signatures.

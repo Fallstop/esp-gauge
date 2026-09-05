@@ -57,7 +57,7 @@
       /></svg
     >
     <h1>Add a gauge.</h1>
-    <p>Connect a gauge to PWM{port + 1}, then set its full-scale point.</p>
+    <p>Connect a gauge to PWM{port + 1}, then match its scale.</p>
     <button class="primary full" onclick={oncalibrate} disabled={!status.connected}
       >Add gauge <span>+</span></button
     >
@@ -179,7 +179,9 @@
   {#if source.detail}<p class="hint detail">{source.detail}</p>{/if}
   <div class="inspector-bottom">
     <button class="text-button" onclick={oncalibrate} disabled={!status.connected}
-      >Recalibrate <span class="mono subtle">{(channel.max_duty / 10).toFixed(1)}%</span></button
+      >Recalibrate <span class="mono subtle"
+        >{((channel.min_duty ?? 0) / 10).toFixed(1)}–{(channel.max_duty / 10).toFixed(1)}%</span
+      ></button
     ><button
       class="icon-button remove"
       aria-label="Remove gauge"

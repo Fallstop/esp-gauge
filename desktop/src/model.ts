@@ -2,6 +2,7 @@ export type Channel = {
   enabled: boolean;
   name: string;
   source: string;
+  min_duty: number;
   max_duty: number;
   response_ms: number;
   scale: number;
@@ -27,6 +28,8 @@ export type Board = {
 export type Snapshot = {
   connected: boolean;
   device: string;
+  firmware: string;
+  candidates: string[];
   path: string;
   devices: { id: string; path: string }[];
   config: Config | null;
@@ -39,6 +42,7 @@ export const emptyChannel = (): Channel => ({
   enabled: false,
   name: '',
   source: 'cpu',
+  min_duty: 0,
   max_duty: 0,
   response_ms: 500,
   scale: 100,
@@ -48,6 +52,8 @@ export const emptyConfig = (): Config => ({ version: 2, channels: Array.from({ l
 export const emptySnapshot = (): Snapshot => ({
   connected: false,
   device: '',
+  firmware: '',
+  candidates: [],
   path: '',
   devices: [],
   config: null,

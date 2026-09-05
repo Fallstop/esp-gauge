@@ -1,9 +1,12 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+mod firmware_flash;
 #[cfg(target_os = "macos")]
 mod mac_menu;
 mod metrics;
 mod model;
+mod releases;
 mod transport;
+mod updates;
 mod worker;
 use serde_json::{json, Value};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -40,6 +43,9 @@ fn show_window(app: tauri::AppHandle) {
 }
 #[tauri::command]
 async fn quit(app: tauri::AppHandle, service: State<'_, Service>) -> Result<(), String> {
+    if app.state::<updates::Updates>().is_busy() {
+        return Err("Wait for the update to finish before quitting.".into());
+    }
     let service = service.inner().clone();
     let _ = tauri::async_runtime::spawn_blocking(move || service.execute(json!({"op":"release"})))
         .await;
@@ -79,6 +85,8 @@ fn main() {
         return;
     }
     tauri::Builder::default()
+        .manage(updates::Updates::default())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec!["--background"]),
@@ -156,6 +164,10 @@ fn main() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            updates::check_updates,
+            updates::update_status,
+            updates::install_firmware,
+            updates::install_app_update,
             snapshot,
             command,
             login_start,

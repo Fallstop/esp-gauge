@@ -59,7 +59,7 @@
   ];
 </script>
 
-<div class="board-scene">
+<div class="board-scene" inert={!status.connected}>
   <img class="board-shadow" src="/assets/board-shadow.png" alt="" draggable="false" />
   <img
     class="board-line"
@@ -69,7 +69,7 @@
   />
   <svg class="traces" viewBox="0 0 1000 740" aria-hidden="true">
     {#each ports as p, i}
-      <polyline points={p.path} class:chosen={selected === i} />
+      <polyline pathLength="1" points={p.path} class:chosen={selected === i} />
       <circle cx={p.tx} cy={p.ty} r={selected === i ? 6 : 3} class:chosen={selected === i} />
       <polygon points={p.polygon} class:chosen={selected === i} />
     {/each}
@@ -79,8 +79,10 @@
       class="port"
       class:selected={selected === i}
       class:assigned={config.channels[i].enabled}
-      style:left="{p.x}%"
-      style:top="{p.y}%"
+      style:--port-x="{p.x}%"
+      style:--port-y="{p.y}%"
+      style:--anchor-x="{p.tx / 10}%"
+      style:--anchor-y="{p.ty / 7.4}%"
       onclick={() => onselect(i)}
       aria-label="PWM{i + 1}, {config.channels[i].enabled
         ? sourceFor(config.channels[i].source).name

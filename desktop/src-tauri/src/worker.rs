@@ -22,6 +22,8 @@ pub struct Device {
 pub struct Snapshot {
     pub connected: bool,
     pub device: String,
+    pub firmware: String,
+    pub candidates: Vec<String>,
     pub path: String,
     pub devices: Vec<Device>,
     pub config: Option<Config>,
@@ -35,6 +37,8 @@ impl Default for Snapshot {
         Self {
             connected: false,
             device: String::new(),
+            firmware: String::new(),
+            candidates: Vec::new(),
             path: String::new(),
             devices: Vec::new(),
             config: None,
@@ -105,11 +109,37 @@ fn run(app: AppHandle, rx: mpsc::Receiver<Job>, shared: Arc<Mutex<Snapshot>>) {
     let mut last_clock = Instant::now();
     let mut wifi_scan = Instant::now() - Duration::from_secs(60);
     let mut calibrating = false;
+    let mut maintenance = false;
     loop {
         match rx.recv_timeout(Duration::from_millis(20)) {
             Ok(job) => {
                 let op = job.command["op"].as_str().unwrap_or("").to_owned();
                 let result = (|| -> Result<Value, String> {
+                    if op == "maintenance" {
+                        let active = job.command["active"]
+                            .as_bool()
+                            .ok_or("Invalid maintenance state")?;
+                        if active && probing.is_some() {
+                            return Err("Finishing device discovery. Try again in a moment.".into());
+                        }
+                        if active {
+                            if let Some(l) = link.as_mut() {
+                                let _ = l.request(json!({"op":"release"}));
+                            }
+                            link = None;
+                            calibrating = false;
+                            state.connected = false;
+                            state.board = json!({});
+                        }
+                        maintenance = active;
+                        seen.clear();
+                        state.error = None;
+                        last_scan = Instant::now() - Duration::from_secs(10);
+                        return Ok(json!({"ok":true}));
+                    }
+                    if maintenance {
+                        return Err("Firmware installation is in progress.".into());
+                    }
                     if op == "retry" {
                         seen.clear();
                         last_scan = Instant::now() - Duration::from_secs(10);
@@ -131,6 +161,7 @@ fn run(app: AppHandle, rx: mpsc::Receiver<Job>, shared: Arc<Mutex<Snapshot>>) {
                         let config = connect(&mut next)?;
                         state.path = next.path.clone();
                         state.device = next.device.clone();
+                        state.firmware = next.firmware.clone();
                         state.config = Some(config);
                         state.connected = true;
                         state.paused = false;
@@ -144,10 +175,23 @@ fn run(app: AppHandle, rx: mpsc::Receiver<Job>, shared: Arc<Mutex<Snapshot>>) {
                     {
                         return Err("The connected board changed. Select it before editing.".into());
                     }
+                    if op == "calibrate" && l.max_duty < 1000 {
+                        return Err("Update this board’s firmware to calibrate its range.".into());
+                    }
                     let config = if op == "config" {
                         let c: Config = serde_json::from_value(job.command["config"].clone())
                             .map_err(|e| e.to_string())?;
                         c.validate()?;
+                        if l.max_duty < 1000
+                            && c.channels
+                                .iter()
+                                .any(|c| c.min_duty > 0 || c.max_duty > l.max_duty)
+                        {
+                            return Err(
+                                "Update this board’s firmware to use this calibration range."
+                                    .into(),
+                            );
+                        }
                         Some(c)
                     } else {
                         None
@@ -200,6 +244,7 @@ fn run(app: AppHandle, rx: mpsc::Receiver<Job>, shared: Arc<Mutex<Snapshot>>) {
                                 Ok(c) => {
                                     state.config = Some(c);
                                     state.device = l.device.clone();
+                                    state.firmware = l.firmware.clone();
                                     state.path = path;
                                     state.connected = true;
                                     state.error = None;
@@ -224,9 +269,14 @@ fn run(app: AppHandle, rx: mpsc::Receiver<Job>, shared: Arc<Mutex<Snapshot>>) {
                 publish(&app, &shared, &state);
             }
         }
-        if !calibrating && probing.is_none() && last_scan.elapsed() >= Duration::from_secs(3) {
+        if !maintenance
+            && !calibrating
+            && probing.is_none()
+            && last_scan.elapsed() >= Duration::from_secs(3)
+        {
             last_scan = Instant::now();
             let paths = transport::candidates();
+            state.candidates = paths.clone();
             seen.retain(|p, (id, at)| {
                 paths.contains(p) && (id.is_some() || at.elapsed() < Duration::from_secs(60))
             });

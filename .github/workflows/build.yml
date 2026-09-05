@@ -1,6 +1,7 @@
 name: Build ESP Gauge
 on:
   push:
+    branches: [main, 'codex/**']
   pull_request:
   workflow_dispatch:
 permissions:
@@ -43,7 +44,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
-      - run: npm run tauri build
+      - run: npm run tauri build -- --config '{"bundle":{"createUpdaterArtifacts":false}}'
       - uses: actions/upload-artifact@v4
         with:
           name: esp-gauge-${{ runner.os }}-${{ runner.arch }}

@@ -49,3 +49,9 @@ Windows x86-64 MSVC compilation and NSIS installer generation passed on macOS us
 Wi-Fi credential provisioning and forgetting were exercised without logging the password. The existing OS-saved network was not visible in the board’s returned 2.4 GHz scan results and did not connect. That trial credential was removed. Real network association and cold-start NTP recovery therefore remain unverified. Clock continuation while powered and host time synchronization did pass.
 
 Physical full-scale calibration still requires observing the attached needle. Windows native execution, platform signing/notarization and a broader OS/hardware compatibility matrix remain release validation work. Windows/Linux packages are unsigned. The Mac bundle has an ad-hoc integrity signature, with no Developer ID signature or notarization.
+
+## 2.1.0 continuation — 6 September 2026
+
+The connected board retained its user-configured PWM6 full-scale setting of 82.5% through the refactored firmware upload. All hardware checks passed, including 0.5–1% range mapping, unavailable-source rest, invalid ranges, clocks, radio sensing, reset persistence and fragmented serial frames. Live calibration acknowledgement measured 10.95 ms median and 11.42 ms p95. Original configuration was restored after the tests.
+
+Native macOS computer-use checks verified the embedded title bar, PWM6 range editor, live 1% upper and 0.5% lower endpoints, cancellation and the new Updates settings. Signed firmware-manifest tests verify the valid signature and reject a changed byte; fixed flash-region validation rejects writes overlapping NVS. Release installation and automatic-update end-to-end checks follow publication.

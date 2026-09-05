@@ -1,6 +1,11 @@
 {
   "identifier": "default",
   "description": "Local gauge window",
-  "windows": ["main"],
-  "permissions": ["core:default"]
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging"
+  ]
 }

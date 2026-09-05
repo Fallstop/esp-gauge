@@ -53,19 +53,19 @@ try:
     Path('artifacts/config-before-hardware-test.json').write_text(json.dumps(original, indent=2))
     safe = copy.deepcopy(original)
     for c in safe['channels']:
-        c.update(enabled=False, max_duty=0, source='cpu', scale=100, reverse=False, response_ms=0)
+        c.update(enabled=False, min_duty=0, max_duty=0, source='cpu', scale=100, reverse=False, response_ms=0)
     safe['verification_metadata'] = {'opaque': ['retained', 2]}
     ok('config', config=safe)
     assert ok('get_config')['config'] == safe
     bad = copy.deepcopy(safe)
-    bad['channels'][5]['max_duty'] = 881
+    bad['channels'][5]['max_duty'] = 1001
     assert not request('config', config=bad)['ok']
     assert ok('get_config')['config'] == safe
     bad['channels'][5]['max_duty'] = 0
     bad['version'] = 3
     assert not request('config', config=bad)['ok']
     assert not request('calibrate', port=6, duty=10)['ok']
-    assert not request('calibrate', port=5, duty=881)['ok']
+    assert not request('calibrate', port=5, duty=1001)['ok']
     print('Configuration roundtrip, unknown metadata, invalid requests: OK')
 
     ok('calibrate', port=5, duty=10)
@@ -90,7 +90,21 @@ try:
     ok('live', values=[None]*5+[1.0], paused=False)
     time.sleep(3.15)
     assert ok('status')['duties'] == [0]*6
-    print('Host values, unavailable sources and host timeout: OK')
+    host['channels'][5].update(min_duty=5)
+    ok('config', config=host)
+    ok('live', values=[None]*5+[0.0], paused=False)
+    time.sleep(.03)
+    assert ok('status')['duties'][5] == 20
+    ok('live', values=[None]*5+[1.0], paused=False)
+    time.sleep(.03)
+    assert ok('status')['duties'][5] == 40
+    ok('live', values=[None]*6, paused=False)
+    time.sleep(.03)
+    assert ok('status')['duties'][5] == 0
+    bad = copy.deepcopy(host)
+    bad['channels'][5]['min_duty'] = 11
+    assert not request('config', config=bad)['ok']
+    print('Host readings, range endpoints, unavailable readings and timeout: OK')
 
     clocks = copy.deepcopy(safe)
     for i, source in enumerate(['time_day', 'time_hours', 'time_minutes', 'time_seconds']):

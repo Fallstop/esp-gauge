@@ -1,0 +1,23 @@
+{
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "ESP Gauge",
+        "width": 1160,
+        "height": 800,
+        "minWidth": 880,
+        "minHeight": 680,
+        "backgroundColor": "#202323",
+        "theme": "Dark",
+        "center": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": 18,
+          "y": 24
+        }
+      }
+    ]
+  }
+}

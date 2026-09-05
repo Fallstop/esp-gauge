@@ -173,3 +173,102 @@
     margin: 15px 0;
   }
 }
+
+.macos .app-header {
+  padding-left: 72px;
+}
+main {
+  transition: grid-template-columns 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.inspector {
+  transition:
+    opacity 300ms,
+    transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  min-width: 0;
+}
+.board-panel {
+  transition: padding 650ms;
+}
+.board-line {
+  transition: opacity 750ms;
+}
+.board-scene {
+  transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.port {
+  left: var(--port-x);
+  top: var(--port-y);
+  transition:
+    left 450ms cubic-bezier(0.4, 0, 0.2, 1),
+    top 450ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 280ms,
+    color 150ms,
+    border-color 150ms;
+}
+.traces polyline {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  transition:
+    stroke-dashoffset 420ms,
+    opacity 400ms;
+}
+.traces circle,
+.traces polygon,
+.board-panel-foot,
+.computer-strip {
+  transition: opacity 300ms;
+}
+.disconnected-message {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 15%;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 400ms 350ms;
+  pointer-events: none;
+}
+.disconnected:not(.settings-open) main {
+  grid-template-columns: minmax(0, 1fr) 0px;
+}
+.disconnected:not(.settings-open) .inspector {
+  opacity: 0;
+  transform: translateX(45px);
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+}
+.disconnected .board-panel {
+  padding-right: 0;
+}
+.disconnected .board-line {
+  opacity: 0.17;
+}
+.disconnected .port {
+  left: var(--anchor-x);
+  top: var(--anchor-y);
+  opacity: 0;
+}
+.disconnected .traces polyline {
+  stroke-dashoffset: 1;
+  opacity: 0;
+}
+.disconnected .traces circle,
+.disconnected .traces polygon,
+.disconnected .board-panel-foot,
+.disconnected .computer-strip {
+  opacity: 0;
+}
+.disconnected .disconnected-message {
+  opacity: 1;
+}
+.disconnected .board-scene {
+  transform: translateY(35px);
+}
+@media (max-width: 700px) {
+  .disconnected:not(.settings-open) .inspector {
+    display: none;
+  }
+}

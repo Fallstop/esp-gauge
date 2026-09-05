@@ -3,11 +3,11 @@
 #include <math.h>
 
 namespace gauge {
-constexpr unsigned COUNT = 6, MAX_DUTY = 880;
+constexpr unsigned COUNT = 6, MAX_DUTY = 1000;
 constexpr uint32_t HOST_TIMEOUT = 3000, CAL_TIMEOUT = 1500;
 struct Channel {
   bool enabled = false, reverse = false;
-  uint16_t maxDuty = 0, response = 500;
+  uint16_t minDuty = 0, maxDuty = 0, response = 500;
   float target = 0, position = 0;
   bool available = false;
 };
@@ -51,7 +51,8 @@ struct Engine {
     if (!c.enabled || !c.available)
       return 0;
     float p = c.reverse ? 1 - c.position : c.position;
-    return unsigned(fmaxf(0, fminf(float(MAX_DUTY), c.maxDuty * fmaxf(0, fminf(1, p)))) * 4095 / 1000);
+    float duty = c.minDuty + (float(c.maxDuty) - c.minDuty) * fmaxf(0, fminf(1, p));
+    return unsigned(fmaxf(0, fminf(float(MAX_DUTY), duty)) * 4095 / 1000);
   }
 };
 inline float clockValue(const char unit, int64_t epoch, int offset) {

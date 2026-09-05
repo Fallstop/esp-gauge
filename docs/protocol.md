@@ -10,7 +10,7 @@ Enumerate CH340C USB bridges (VID `1a86`, PID `7523`). Open exclusively where su
 product = "ESP Gauge"
 protocol = 2
 channels = 6
-max_duty = 880
+max_duty = 1000
 device = nonempty stable chip identifier
 ```
 
@@ -26,7 +26,7 @@ Unrecognised bridges are released, then may receive another single identity quer
 | `time` | `epoch` (UTC seconds), `offset` (seconds east of UTC) | Set clock; store offset only if it changes |
 | `live` | `values`: six normalized numbers 0–1 or null, `paused`: bool | Refresh host lease and return board readings; optional `include_networks` |
 | `status` | — | Readings and Wi-Fi scan results without refreshing the host lease |
-| `calibrate` | `port`: 0–5, `duty`: 0–880 per mille | Immediate raw output on one port; renewable 1.5-second lease |
+| `calibrate` | `port`: 0–5, `duty`: 0–1000 per mille | Immediate raw output on one port; renewable 1.5-second lease |
 | `calibrate_end` | — | End calibration and resume assigned source |
 | `pause` | `paused`: bool | Temporarily rest all outputs |
 | `release` | — | End host lease/calibration, rest PC sources, leave standalone sources running |
@@ -47,6 +47,10 @@ The desktop adds a `device` field to mutations; its worker checks this against t
 }
 ```
 
-Exactly six channel objects are required. `max_duty` is PWM per mille (0–880), `response_ms` is the exponential response time constant (0–5000), and `scale` is the source value corresponding to full-scale deflection. The blob may contain arbitrary additional fields and is preserved up to 4096 bytes. The ESP understands only the subset needed to run outputs. NVS stores the complete JSON atomically; it never silently replaces corrupt or future-version settings.
+Exactly six channel objects are required. `max_duty` is PWM per mille (0–1000), `response_ms` is the exponential response time constant (0–5000), and `scale` is the source value corresponding to full-scale deflection. The blob may contain arbitrary additional fields and is preserved up to 4096 bytes. The ESP understands only the subset needed to run outputs. NVS stores the complete JSON atomically; it never silently replaces corrupt or future-version settings.
 
 Host sources are supplied as normalized readings. Built-in standalone source IDs are `time_day`, `time_hours`, `time_minutes`, `time_seconds`, `esp_wifi`, `esp_ble`, `esp_temperature`, `esp_rssi`, and `constant`. `constant` uses `scale` as a position percentage. Wi-Fi and Bluetooth scans run only when needed; only advertising BLE addresses are visible. Time is synchronized from the host every 30 seconds and optionally over NTP. Without Wi-Fi, time survives USB disconnection while powered but must be supplied again after a cold boot. Time zone is the last host UTC offset; a standalone board needs a host reconnection to pick up daylight-saving offset changes.
+
+### Calibration ranges (firmware 2.1+)
+
+`min_duty` is an optional per-channel integer, defaulting to zero for older configurations. It must be between zero and `max_duty`; both use tenths of one percent (0–1000). Available readings map through `min_duty + position * (max_duty - min_duty)`, including reversal. Disabled, paused or unavailable gauges always receive zero electrical output. The configuration version and protocol remain 2; `hello.max_duty = 1000` identifies range-capable firmware.

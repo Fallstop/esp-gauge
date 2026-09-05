@@ -7,6 +7,7 @@
   import Inspector from './Inspector.svelte';
   import Calibration from './Calibration.svelte';
   import Settings from './Settings.svelte';
+  import { startUpdates, updates } from './updateState.svelte';
   let status = $state<Snapshot>(emptySnapshot()),
     config = $state<Config>(emptyConfig());
   let selected = $state(0),
@@ -97,8 +98,8 @@
     }
     calibrating = false;
   }
-  async function finish(duty: number) {
-    change({ enabled: true, max_duty: duty });
+  async function finish(min: number, max: number) {
+    change({ enabled: true, min_duty: min, max_duty: max });
     clearTimeout(timer);
     if (!(await save())) return false;
     await cancel();
@@ -136,6 +137,12 @@
         error = String(e);
       }
   }
+  async function prepareUpdate() {
+    commitEditing();
+    clearTimeout(timer);
+    if (calibrating) await cancel();
+    return !pending || (await save());
+  }
   function commitEditing() {
     const input = document.activeElement;
     if (input instanceof HTMLInputElement) {
@@ -146,6 +153,7 @@
   }
   onMount(() => {
     if (!isTauri()) return;
+    const stopUpdates = startUpdates();
     let unlisten: () => void = () => {};
     let unlistenQuit: () => void = () => {};
     let disposed = false;
@@ -182,6 +190,7 @@
     document.addEventListener('visibilitychange', visible);
     return () => {
       disposed = true;
+      stopUpdates();
       unlisten();
       unlistenQuit();
       clearTimeout(timer);
@@ -191,12 +200,17 @@
   let enabled = $derived(config.channels.filter((c) => c.enabled).length);
 </script>
 
-<div class="app-shell">
-  <header class="app-header">
-    <div class="wordmark">
+<div
+  class="app-shell"
+  class:disconnected={!status.connected}
+  class:settings-open={settings}
+  class:macos={navigator.userAgent.includes('Mac')}
+>
+  <header class="app-header" data-tauri-drag-region>
+    <div class="wordmark" data-tauri-drag-region>
       <svg viewBox="0 0 32 32" aria-hidden="true"
         ><path d="M4 23a13 13 0 0 1 24 0M16 23l8-13" /><circle cx="16" cy="23" r="2" /></svg
-      ><span>ESP <b>GAUGE</b></span>
+      ><span data-tauri-drag-region>ESP <b data-tauri-drag-region>GAUGE</b></span>
     </div>
     <div class="header-actions">
       {#if status.devices.length > 1}<select
@@ -231,6 +245,8 @@
       <button
         class="icon-button"
         class:active={settings}
+        class:has-update={!!updates.app_version ||
+          !!(status.connected && updates.firmware_version && updates.firmware_version !== status.firmware)}
         aria-label="Board settings"
         title="Board settings"
         onclick={boardSettings}
@@ -241,7 +257,10 @@
   <main>
     <section class="board-panel" aria-label="Gauge outputs">
       <Board {config} {status} {selected} onselect={(n) => void select(n)} />
-      <div class="board-panel-foot">
+      <div class="disconnected-message" aria-live="polite">
+        {!status.connected ? 'Connect your board to begin.' : ''}
+      </div>
+      <div class="board-panel-foot" inert={!status.connected}>
         <span
           >{calibrating
             ? `Adjusting PWM${selected + 1}`
@@ -250,7 +269,7 @@
               : 'Select a header to add your first gauge.'}</span
         >
       </div>
-      <div class="computer-strip">
+      <div class="computer-strip" inert={!status.connected}>
         <div>
           <span>CPU</span><strong
             >{status.metrics.cpu == null ? '—' : status.metrics.cpu.toFixed(0)}<small>%</small></strong
@@ -275,9 +294,19 @@
         </div>
       </div>
     </section>
-    <aside class="inspector" aria-label={settings ? 'Board settings' : `PWM${selected + 1} settings`}>
-      {#if settings}<Settings {status} {send} onclose={() => (settings = false)} />
-      {:else if calibrating}<Calibration port={selected} {send} onfinish={finish} oncancel={cancel} />
+    <aside
+      class="inspector"
+      inert={!status.connected && !settings}
+      aria-label={settings ? 'Board settings' : `PWM${selected + 1} settings`}
+    >
+      {#if settings}<Settings {status} {send} onprepare={prepareUpdate} onclose={() => (settings = false)} />
+      {:else if calibrating}<Calibration
+          port={selected}
+          channel={config.channels[selected]}
+          {send}
+          onfinish={finish}
+          oncancel={cancel}
+        />
       {:else}<Inspector
           channel={config.channels[selected]}
           port={selected}
