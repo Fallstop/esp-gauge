@@ -213,7 +213,7 @@ main {
     opacity 400ms;
 }
 .traces circle,
-.traces polygon,
+.header-targets,
 .board-panel-foot,
 .computer-strip {
   transition: opacity 300ms;
@@ -256,7 +256,7 @@ main {
   opacity: 0;
 }
 .disconnected .traces circle,
-.disconnected .traces polygon,
+.disconnected .header-targets,
 .disconnected .board-panel-foot,
 .disconnected .computer-strip {
   opacity: 0;
