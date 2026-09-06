@@ -3,6 +3,10 @@
   padding: 30px 0 24px 30px;
   position: relative;
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--control-line) transparent;
 }
 .inspector-heading {
   display: flex;
@@ -38,6 +42,11 @@
 }
 .primary:hover:not(:disabled) {
   background: #cce3d5;
+}
+.primary:disabled {
+  background: #39433d;
+  border-color: var(--line);
+  color: var(--muted);
 }
 .primary span {
   font-size: 17px;

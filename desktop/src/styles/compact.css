@@ -1,0 +1,51 @@
+@media (min-width: 701px) and (max-height: 800px) {
+  .app-header {
+    height: 60px;
+  }
+  .board-panel {
+    padding-top: 14px;
+    padding-bottom: 18px;
+  }
+  .board-scene {
+    margin: 12px 0 4px;
+  }
+  .inspector {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+  .readout .dial {
+    max-width: 190px;
+  }
+  .readout,
+  .field {
+    margin-bottom: 14px;
+  }
+  .intro {
+    margin: 12px 0 18px;
+  }
+  .settings-foot {
+    margin-top: 28px;
+    padding-top: 16px;
+  }
+  .calibration .eyebrow {
+    margin-bottom: 16px;
+  }
+  .calibration-illustration {
+    margin-bottom: 16px;
+  }
+  .calibration .hint {
+    margin: 16px 0 !important;
+  }
+  .update-item {
+    padding: 18px 0;
+    margin-bottom: 14px;
+  }
+}
+@media (max-width: 700px) {
+  .app-shell {
+    height: auto;
+  }
+  .inspector {
+    overflow: visible;
+  }
+}

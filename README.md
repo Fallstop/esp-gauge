@@ -53,9 +53,11 @@ Requirements: Node 22.12+ or 24, Rust, and the [Tauri platform dependencies](htt
 
 Linux users also need access to the serial device, normally through the distribution's `dialout` group. The tested KDE account already has this access.
 
-On Windows, use the **setup.exe** installer. It includes WCH's CH340/CH341 driver for the CH340C board and offers to run it during setup: approve the Windows administrator prompt, then choose **INSTALL** in the WCH window. The driver is bundled, so this step works offline. WebView2 is downloaded when needed. If the board already connects, you can skip the driver step. To retry later, open **ESP Gauge USB driver setup** from the Start menu.
+On Windows, use the **setup.exe** installer. It includes WCH's CH340/CH341 driver for the CH340C board and offers to run it during setup: approve the Windows administrator prompt, then choose **INSTALL** in the WCH window. The driver is bundled, so this step works offline. WebView2 is downloaded when needed. If the board already connects, you can skip the driver step.
 
 App updates and silent/passive installations skip the interactive driver step. MSI packages include `drivers/CH341SER.EXE` in the app's installation folder; administrators must run it separately. Portable executables require an existing driver or the [official WCH installer](https://www.wch-ic.com/downloads/CH341SER_EXE.html). Uninstalling ESP Gauge leaves the shared Windows driver installed for other CH340 devices.
+
+The next Windows build checks for a compatible driver in the Windows driver store, including when the board is unplugged. If one is present, setup skips the driver prompt. **USB driver setup** on the **Connect board** page lets you install or repair the driver from the app, including if detection fails. It asks for administrator approval only when you choose to run setup. App installation, updates, and startup remove the old Start menu driver shortcut. Driver detection checks for an available package; it does not diagnose USB cables or board faults. In the published 2.2.4 build, driver setup is still in the Start menu.
 
 ```sh
 cd desktop

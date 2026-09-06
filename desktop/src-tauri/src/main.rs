@@ -8,6 +8,11 @@ mod providers;
 mod releases;
 mod transport;
 mod updates;
+mod usb_driver;
+#[cfg(any(windows, test))]
+mod window_layout;
+#[cfg(any(windows, test))]
+mod windows_driver;
 mod worker;
 use serde_json::{json, Value};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -76,6 +81,14 @@ fn show(app: &tauri::AppHandle) {
     }
 }
 fn main() {
+    #[cfg(windows)]
+    if std::env::args().any(|arg| arg == "--check-usb-driver") {
+        std::process::exit(match windows_driver::available() {
+            Ok(true) => 0,
+            Ok(false) => 1,
+            Err(_) => 2,
+        });
+    }
     if std::env::args().any(|arg| arg == "--diagnose") {
         let mut metrics = metrics::Metrics::new();
         std::thread::sleep(std::time::Duration::from_millis(800));
@@ -95,6 +108,12 @@ fn main() {
         ))
         .plugin(tauri_plugin_single_instance::init(|app, _, _| show(app)))
         .setup(|app| {
+            #[cfg(windows)]
+            std::thread::spawn(windows_driver::remove_legacy_shortcut);
+            #[cfg(windows)]
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window_layout::fit_work_area(&window);
+            }
             app.manage(Service::start(app.handle().clone()));
             #[cfg(target_os = "macos")]
             mac_menu::install(app)?;
@@ -166,6 +185,8 @@ fn main() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            usb_driver::usb_driver_status,
+            usb_driver::install_usb_driver,
             updates::check_updates,
             updates::update_status,
             updates::install_firmware,

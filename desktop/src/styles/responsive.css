@@ -222,7 +222,6 @@ main {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 15%;
   text-align: center;
   font-size: 12px;
   color: var(--muted);
@@ -235,16 +234,19 @@ main {
 }
 .disconnected:not(.settings-open) .inspector {
   opacity: 0;
+  height: 0;
+  min-height: 0;
   transform: translateX(45px);
   overflow: hidden;
   padding: 0;
   border: 0;
 }
 .disconnected .board-panel {
-  padding-right: 0;
+  gap: 8px;
+  padding: 16px 0 24px;
 }
 .disconnected .board-line {
-  opacity: 0.17;
+  opacity: 0.8;
 }
 .disconnected .port {
   left: var(--anchor-x);
@@ -256,18 +258,61 @@ main {
   opacity: 0;
 }
 .disconnected .traces circle,
-.disconnected .header-targets,
-.disconnected .board-panel-foot,
-.disconnected .computer-strip {
+.disconnected .header-targets {
   opacity: 0;
 }
+.disconnected .board-panel-foot,
+.disconnected .computer-strip {
+  display: none;
+}
 .disconnected .disconnected-message {
+  position: static;
+  flex: none;
   opacity: 1;
+  pointer-events: auto;
 }
 .disconnected .board-scene {
-  transform: translateY(35px);
+  width: min(100%, 720px, calc((100dvh - 310px) * 1.35135));
+  margin: 0;
+  transform: none;
+}
+.connect-board {
+  width: min(100% - 32px, 340px);
+  margin: 0 auto;
+}
+.connect-board h1 {
+  color: var(--ink);
+  font-size: 23px;
+  letter-spacing: -0.6px;
+  margin-bottom: 8px;
+}
+.connect-board p {
+  line-height: 1.8;
+}
+.driver-setup-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 22px;
+  border: 1px solid var(--control-line);
+  border-radius: 4px;
+  color: var(--mint);
+  background: var(--panel);
+  padding: 10px 14px;
+  font-size: 12px;
+  margin: 18px 0 8px;
+}
+.driver-setup-button:hover:not(:disabled) {
+  border-color: var(--mint);
+  color: var(--ink);
+}
+.connect-board .driver-help {
+  font-size: 11px;
+  color: var(--muted);
 }
 @media (max-width: 700px) {
+  .disconnected .board-scene {
+    width: min(100%, 540px);
+  }
   .disconnected:not(.settings-open) .inspector {
     display: none;
   }

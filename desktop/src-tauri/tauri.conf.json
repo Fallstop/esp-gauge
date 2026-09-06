@@ -15,9 +15,9 @@
         "label": "main",
         "title": "ESP Gauge",
         "width": 1160,
-        "height": 800,
+        "height": 720,
         "minWidth": 880,
-        "minHeight": 680,
+        "minHeight": 580,
         "backgroundColor": "#202323",
         "theme": "Dark",
         "center": true

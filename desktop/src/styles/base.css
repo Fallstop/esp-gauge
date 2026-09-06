@@ -1,16 +1,17 @@
 :root {
   font-family: 'Manrope Variable', sans-serif;
-  color: #e7eae4;
+  color: #f0f3ee;
   background: #202323;
   font-synthesis: none;
   font-weight: 450;
   --bg: #202323;
   --panel: #252929;
-  --ink: #e7eae4;
-  --muted: #929d97;
-  --dim: #68756e;
-  --line: #3a4340;
-  --mint: #b8d5c4;
+  --ink: #f0f3ee;
+  --muted: #bdc8c0;
+  --dim: #a5b3a9;
+  --line: #53645b;
+  --mint: #c5e7d0;
+  --control-line: #718178;
   --mono: 'IBM Plex Mono', monospace;
 }
 * {
@@ -32,8 +33,12 @@ button {
 button:disabled,
 input:disabled,
 select:disabled {
-  opacity: 0.42;
+  color: var(--dim);
   cursor: default;
+}
+input::placeholder {
+  color: var(--dim);
+  opacity: 1;
 }
 button:focus-visible,
 input:focus-visible,
@@ -74,6 +79,7 @@ h1 {
   color: var(--muted);
 }
 .app-shell {
+  height: 100dvh;
   min-height: 100vh;
   display: flex;
   flex-direction: column;

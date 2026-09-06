@@ -9,8 +9,12 @@ Run CH341SER.EXE, approve the Windows administrator prompt, and choose
 INSTALL in the WCH window. Follow its result/restart instructions, then
 reconnect the board if necessary. No driver download is needed.
 
-ESP Gauge's interactive setup.exe offers this step and adds
-"ESP Gauge USB driver setup" to the Start menu so you can retry later.
+ESP Gauge checks Windows for a compatible driver, even with the board
+unplugged. If none is found (or the check fails), interactive setup.exe
+offers this step. You can also choose "USB driver setup" on ESP Gauge's
+Connect board page. It remains available there for repair if needed.
+Setup, app updates, and app startup remove the old Start menu driver
+shortcut from ESP Gauge 2.2.4. No new driver shortcut is created.
 App updates and silent/passive setup skip the interactive driver step.
 MSI deployments include this file and CH341SER.EXE in the app's drivers
 folder; an administrator must run the driver installer separately.

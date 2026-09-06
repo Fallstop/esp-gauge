@@ -7,6 +7,7 @@
   import Inspector from './Inspector.svelte';
   import Calibration from './Calibration.svelte';
   import Settings from './Settings.svelte';
+  import ConnectBoard from './ConnectBoard.svelte';
   import { startUpdates, updates, newerVersion } from './updateState.svelte';
   let status = $state<Snapshot>(emptySnapshot()),
     config = $state<Config>(emptyConfig());
@@ -262,8 +263,8 @@
   <main>
     <section class="board-panel" aria-label="Gauge outputs" inert={installing}>
       <Board {config} {status} {selected} onselect={(n) => void select(n)} />
-      <div class="disconnected-message" aria-live="polite">
-        {!status.connected ? 'Connect your board to begin.' : ''}
+      <div class="disconnected-message" inert={status.connected}>
+        {#if !status.connected}<ConnectBoard />{/if}
       </div>
       <div class="board-panel-foot" inert={!status.connected}>
         <span

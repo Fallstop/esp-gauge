@@ -3,7 +3,7 @@ main {
   grid-template-columns: minmax(0, 1fr) 314px;
   flex: 1;
   margin: 0 36px;
-  min-height: 640px;
+  min-height: 0;
 }
 .board-panel {
   position: relative;
@@ -12,6 +12,7 @@ main {
   justify-content: center;
   padding: 28px 30px 24px 0;
   min-width: 0;
+  min-height: 0;
 }
 .board-panel-top {
   display: flex;
@@ -27,6 +28,7 @@ main {
   color: var(--dim);
 }
 .board-scene {
+  flex-shrink: 0;
   width: 100%;
   position: relative;
   aspect-ratio: 1000/740;
@@ -49,8 +51,8 @@ main {
   opacity: 0.65;
 }
 .board-line {
-  filter: invert(1) drop-shadow(0 0 0.4px #ffffffb0);
-  opacity: 0.95;
+  filter: invert(1) drop-shadow(0 0 0.45px #fff) drop-shadow(0 0 0.45px #fff);
+  opacity: 1;
 }
 .traces {
   position: absolute;
@@ -62,14 +64,14 @@ main {
 }
 .traces polyline {
   fill: none;
-  stroke: #657269;
+  stroke: var(--muted);
   stroke-width: 1;
-  opacity: 0.5;
+  opacity: 0.8;
   stroke-linejoin: round;
 }
 .traces polyline.chosen {
   stroke: var(--mint);
-  opacity: 0.9;
+  opacity: 1;
   stroke-width: 1.5;
 }
 .traces circle {
@@ -156,11 +158,11 @@ main {
 }
 .header-target.hovered {
   fill: #b8d5c40a;
-  stroke: #b8d5c47a;
+  stroke: var(--muted);
 }
 .header-target.chosen {
   fill: #b8d5c412;
-  stroke: #b8d5c4b0;
+  stroke: var(--mint);
 }
 .header-target.focused {
   stroke: var(--mint);
@@ -216,7 +218,7 @@ main {
 }
 .metric-track i {
   display: block;
-  background: #7f998a;
+  background: var(--muted);
   height: 100%;
   transition: width 0.7s;
 }

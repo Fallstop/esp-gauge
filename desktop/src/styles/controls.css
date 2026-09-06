@@ -5,22 +5,22 @@
   overflow: visible;
 }
 .dial .dial-arc {
-  stroke: #3b4942;
+  stroke: var(--control-line);
   stroke-width: 1;
   fill: none;
 }
 .dial line {
-  stroke: #64786c;
+  stroke: var(--dim);
   stroke-width: 1;
 }
 .dial line.major {
-  stroke: #a1b0a6;
+  stroke: var(--muted);
   stroke-width: 1.5;
 }
 .dial text {
   font-family: var(--mono);
   font-size: 8px;
-  fill: #a1aea5;
+  fill: var(--muted);
 }
 .dial .needle {
   transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.3, 1);
@@ -85,7 +85,7 @@
 select,
 .field > input:not([type='range']):not([type='checkbox']),
 .number-unit {
-  border: 1px solid #45524a;
+  border: 1px solid var(--control-line);
   background: #252c27;
   border-radius: 4px;
   padding: 11px 12px;
@@ -97,7 +97,7 @@ select {
   padding-right: 32px;
 }
 .select-wrap select:disabled {
-  opacity: 0.6;
+  color: var(--dim);
 }
 .value-row {
   display: flex;
@@ -144,7 +144,7 @@ input[type='range'] {
   -webkit-appearance: none;
   width: 100%;
   height: 3px;
-  background: #4b5a51;
+  background: var(--control-line);
   outline-offset: 8px;
   cursor: pointer;
   display: block;
@@ -210,7 +210,7 @@ input[type='range']::-moz-range-thumb {
 .standalone-note {
   font-size: 10px;
   line-height: 1.8;
-  color: #afc5b7;
+  color: var(--muted);
   margin: 0 0 12px;
   display: flex;
   gap: 8px;
@@ -242,7 +242,7 @@ input[type='range']::-moz-range-thumb {
   align-items: center;
   justify-content: space-between;
   text-align: left;
-  border: 1px solid #45524a;
+  border: 1px solid var(--control-line);
   background: #252c27;
   border-radius: 4px;
   padding: 11px 12px;
@@ -260,7 +260,7 @@ input[type='range']::-moz-range-thumb {
 .source-picker {
   position: fixed;
   z-index: 11;
-  border: 1px solid #55665b;
+  border: 1px solid var(--control-line);
   border-radius: 6px;
   background: #272e29;
   box-shadow: 0 10px 40px #0006;
@@ -271,7 +271,7 @@ input[type='range']::-moz-range-thumb {
 }
 .source-picker > input {
   background: #202723;
-  border: 1px solid #46594b;
+  border: 1px solid var(--control-line);
   padding: 10px;
   border-radius: 3px;
   outline-offset: 0;
