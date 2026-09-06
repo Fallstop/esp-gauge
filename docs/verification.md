@@ -2,11 +2,15 @@
 
 The first sections record the original 2.0 implementation. The continuation sections below record the released updates and supersede the original installation and calibration state.
 
-## Windows driver bundling — unreleased
+## Windows driver bundling and 2.2.4 release
 
 The NSIS package now includes the original WCH CH341SER.EXE 4.0, offers interactive driver setup, and creates a Start menu shortcut for retrying it. Updates and silent/passive setup skip the driver prompt. MSI resources include the same executable for separate administrator installation. The driver package contains the board's `1a86:7523` hardware ID and WCH's embedded publisher certificate.
 
-On macOS, the frontend build passed with zero Svelte diagnostics. Tauri generated an NSIS installer with the new hooks and resources using the existing cross-compiled Windows executable; this was a packaging check, not a fresh Windows application build. Extracting its driver reproduced the vendor file byte for byte. The packaging checksum check accepted the original and rejected modified and missing files. Windows CI now checks Authenticode validity and the expected WCH publisher before release. That Windows check, MSI generation, UAC acceptance/cancellation, and clean-machine driver/USB operation have not been executed locally.
+On macOS, the frontend build passed with zero Svelte diagnostics. Tauri generated an NSIS installer with the new hooks and resources using the existing cross-compiled Windows executable; this was a packaging check, not a fresh Windows application build. Extracting its driver reproduced the vendor file byte for byte. The packaging checksum check accepted the original and rejected modified and missing files.
+
+[Release 2.2.4](https://github.com/Fallstop/esp-gauge/releases/tag/v2.2.4) was published after the [full release workflow](https://github.com/Fallstop/esp-gauge/actions/runs/34002890975) passed for firmware, Apple Silicon macOS, Windows x64 and Linux x64. Windows verified WCH's Authenticode signature and publisher and built both NSIS and MSI installers. Desktop tests and Clippy passed on all three platforms, as did the Linux packaged AppImage check and the three release packaging tests. The main commit is `b9b00bd`; no pull request was used.
+
+All 20 published assets were downloaded and checked against GitHub's sizes and SHA-256 digests. All seven update/firmware signatures were verified with the app's existing public key. OS-labelled download names, release-note links, updater URLs and signatures, and firmware segment checksums matched. The published Windows setup contained the exact pinned WCH executable. Windows installer UI, UAC acceptance/cancellation, and clean-machine driver/USB operation still require physical Windows validation.
 
 ## Original implementation: physical board
 
