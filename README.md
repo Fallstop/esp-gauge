@@ -91,7 +91,7 @@ See [protocol](docs/protocol.md), [design](docs/design.md), [verification record
 
 The app checks GitHub releases on launch and every six hours. **Settings → Updates** installs available app updates or board firmware. App installation restarts ESP Gauge; configuration edits are committed first. Unidentified CH340C bridges are offered for explicit initial installation and never flashed automatically. Existing 2.0 firmware connects normally but requires an update before using range calibration.
 
-Signed release assets are produced by `.github/workflows/release.yml` on `v*` tags. All four desktop targets must build and test before publication. `firmware.json` is signed with the same updater key and lists each binary’s offset, size and SHA-256; `latest.json` maps desktop platforms to signed bundles. The public key is in Tauri configuration; the private key stays in the repository’s GitHub Actions secret. Never replace that key for an existing installation base.
+Signed release assets are produced by `.github/workflows/release.yml` on `v*` tags. Release builds target Apple Silicon macOS, Windows x64 and Linux x64; all three must build and test before publication. `firmware.json` is signed with the same updater key and lists each binary’s offset, size and SHA-256; `latest.json` maps desktop platforms to signed bundles. The public key is in Tauri configuration; the private key stays in the repository’s GitHub Actions secret. Never replace that key for an existing installation base.
 
 Use the Linux **AppImage** for in-app updates. Debian/RPM packages use the system package manager. Platform publisher signing/notarization is separate from the mandatory update signatures.
 

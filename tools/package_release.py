@@ -33,7 +33,7 @@ for directory in sorted(source.iterdir()):
             if name.endswith(('.app.tar.gz', '.AppImage', '.exe')):
                 assert platform not in platforms, f'Duplicate updater platform: {platform}'
                 platforms[platform] = {'signature': signature.read_text().strip(), 'url': f'https://github.com/Fallstop/esp-gauge/releases/download/{tag}/{quote(name)}'}
-expected = {'darwin-aarch64', 'darwin-x86_64', 'linux-x86_64', 'windows-x86_64'}
+expected = {'darwin-aarch64', 'linux-x86_64', 'windows-x86_64'}
 assert set(platforms) == expected, f'Missing updater platforms: {expected - set(platforms)}'
 assert (output / 'firmware.json.sig').exists(), 'Unsigned firmware manifest'
 (output / 'latest.json').write_text(json.dumps({'version': version, 'notes': f'ESP Gauge {version}', 'platforms': platforms}, indent=2) + '\n')
