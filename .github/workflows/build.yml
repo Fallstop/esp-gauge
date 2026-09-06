@@ -43,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-14, windows-latest]
+        os: [ubuntu-22.04, macos-14, windows-latest]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -65,7 +65,7 @@ jobs:
           workspaces: desktop/src-tauri
           shared-key: ${{ matrix.os }}
       - if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libasound2-dev libpulse-dev libudev-dev libxdo-dev
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libasound2-dev libpulse-dev libudev-dev libxdo-dev patchelf squashfs-tools
       - name: Use compatible AppImage runtime
         if: runner.os == 'Linux'
         run: |
@@ -76,9 +76,24 @@ jobs:
       - run: npm run build
       - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
       - run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-      - run: npm run tauri build -- --config '{"bundle":{"createUpdaterArtifacts":false}}'
-        env:
-          LDAI_COMP: gzip
+      - run: npm run tauri build -- --verbose --config '{"bundle":{"createUpdaterArtifacts":false}}'
+      - name: Package compatible Linux filesystem
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          # Match release packaging: the bundled compressor only supports zstd.
+          images=(src-tauri/target/release/bundle/appimage/*.AppImage)
+          test "${#images[@]}" -eq 1
+          image="${images[0]}"
+          offset=$(stat -c %s "$LDAI_RUNTIME_FILE")
+          unsquashfs -no-progress -offset "$offset" -d "$RUNNER_TEMP/gauge-appdir" "$image"
+          mksquashfs "$RUNNER_TEMP/gauge-appdir" "$RUNNER_TEMP/gauge.squashfs" -comp gzip -all-root -noappend -no-progress -b 1M
+          cat "$LDAI_RUNTIME_FILE" "$RUNNER_TEMP/gauge.squashfs" > "$image.repacked"
+          chmod 755 "$image.repacked"
+          mv "$image.repacked" "$image"
+      - name: Exercise packaged Linux executable
+        if: runner.os == 'Linux'
+        run: APPIMAGE_EXTRACT_AND_RUN=1 src-tauri/target/release/bundle/appimage/*.AppImage --diagnose
       - uses: actions/upload-artifact@v4
         with:
           name: esp-gauge-${{ runner.os }}-${{ runner.arch }}
