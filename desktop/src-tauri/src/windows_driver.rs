@@ -111,11 +111,16 @@ mod native {
                 return Err(error);
             }
         }
-        if needed < mem::size_of::<SP_DRVINFO_DETAIL_DATA_W>() as u32 || needed > 1024 * 1024 {
-            return Err(io::Error::other("Invalid Windows driver information size"));
+        let offset = mem::offset_of!(SP_DRVINFO_DETAIL_DATA_W, HardwareID);
+        if needed < (offset + 2) as u32 || needed > 1024 * 1024 {
+            return Err(io::Error::other(format!(
+                "Invalid Windows driver information size: {needed} bytes"
+            )));
         }
+        // A record with no IDs can end before the structure's trailing alignment padding.
+        let capacity = (needed as usize).max(mem::size_of::<SP_DRVINFO_DETAIL_DATA_W>());
         // u64 storage preserves the native structure's alignment, including its trailing IDs.
-        let mut storage = vec![0u64; (needed as usize).div_ceil(8)];
+        let mut storage = vec![0u64; capacity.div_ceil(8)];
         let detail = storage.as_mut_ptr().cast::<SP_DRVINFO_DETAIL_DATA_W>();
         (*detail).cbSize = mem::size_of::<SP_DRVINFO_DETAIL_DATA_W>() as u32;
         checked(SetupDiGetDriverInfoDetailW(
@@ -123,10 +128,9 @@ mod native {
             ptr::null(),
             driver,
             detail,
-            needed,
+            capacity as u32,
             ptr::null_mut(),
         ))?;
-        let offset = mem::offset_of!(SP_DRVINFO_DETAIL_DATA_W, HardwareID);
         let ids = std::slice::from_raw_parts(
             storage.as_ptr().cast::<u8>().add(offset).cast::<u16>(),
             (needed as usize - offset) / 2,
