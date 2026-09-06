@@ -213,7 +213,7 @@
   <header class="app-header" data-tauri-drag-region>
     <div class="wordmark" data-tauri-drag-region>
       <svg viewBox="0 0 32 32" aria-hidden="true"
-        ><path d="M4 23a13 13 0 0 1 24 0M16 23l8-13" /><circle cx="16" cy="23" r="2" /></svg
+        ><path d="M5.5 20H9.5V12H13.5V20H17.5M17.5 20 26.5 9.5" /><circle cx="17.5" cy="20" r="2" /></svg
       ><span data-tauri-drag-region>ESP <b data-tauri-drag-region>GAUGE</b></span>
     </div>
     <div class="header-actions">
