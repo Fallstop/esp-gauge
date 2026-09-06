@@ -1,0 +1,17 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "build": {
+    "beforeBundleCommand": "node ../tools/verify_windows_driver.mjs"
+  },
+  "bundle": {
+    "resources": {
+      "windows/drivers/CH341SER.EXE": "drivers/CH341SER.EXE",
+      "windows/drivers/README.txt": "drivers/README.txt"
+    },
+    "windows": {
+      "nsis": {
+        "installerHooks": "windows/installer-hooks.nsh"
+      }
+    }
+  }
+}

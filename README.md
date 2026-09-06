@@ -4,6 +4,16 @@ A six-channel physical resource monitor. Tauri 2 + Rust, Svelte, your PCB’s Bl
 
 Click a physical header, calibrate the gauge with a live slider, and choose a source. Changes are stored on the board automatically. Closing the window keeps the monitor in the tray; **Pause** rests the needles, and **Quit** ends the connection. **Start at login** is optional in settings.
 
+## Download
+
+| Your computer | Install ESP Gauge 2.2.4 |
+| --- | --- |
+| Windows 10 / 11 (x64) | [Windows installer, including the USB driver](https://github.com/Fallstop/esp-gauge/releases/download/v2.2.4/ESP-Gauge-2.2.4-Windows-x64-Setup.exe) |
+| macOS (Apple Silicon: M1 or newer) | [macOS disk image](https://github.com/Fallstop/esp-gauge/releases/download/v2.2.4/ESP-Gauge-2.2.4-macOS-Apple-Silicon.dmg) |
+| Linux (x64) | [Linux AppImage](https://github.com/Fallstop/esp-gauge/releases/download/v2.2.4/ESP-Gauge-2.2.4-Linux-x64.AppImage) |
+
+[Release notes and other package formats](https://github.com/Fallstop/esp-gauge/releases/latest). Existing users can update from **Settings → Updates**. The `.sig`, `.json`, `.bin`, and `.app.tar.gz` files are for automatic updates and firmware installation.
+
 ## Sources
 
 - Computer: CPU, memory, swap, system-drive space, download, upload, battery where available.
@@ -41,7 +51,11 @@ Bluetooth sensing counts advertising BLE addresses (up to 128), not all nearby B
 
 Requirements: Node 22.12+ or 24, Rust, and the [Tauri platform dependencies](https://v2.tauri.app/start/prerequisites/). Linux packages need WebKitGTK 4.1 and an AppIndicator implementation. GNOME users may need its AppIndicator extension for a visible tray icon; launching the app again always opens the existing instance.
 
-Linux users also need access to the serial device, normally through the distribution's `dialout` group. The tested KDE account already has this access. Windows needs a working CH340 driver and WebView2; the NSIS installer provisions WebView2 when needed.
+Linux users also need access to the serial device, normally through the distribution's `dialout` group. The tested KDE account already has this access.
+
+On Windows, use the **setup.exe** installer. It includes WCH's CH340/CH341 driver for the CH340C board and offers to run it during setup: approve the Windows administrator prompt, then choose **INSTALL** in the WCH window. The driver is bundled, so this step works offline. WebView2 is downloaded when needed. If the board already connects, you can skip the driver step. To retry later, open **ESP Gauge USB driver setup** from the Start menu.
+
+App updates and silent/passive installations skip the interactive driver step. MSI packages include `drivers/CH341SER.EXE` in the app's installation folder; administrators must run it separately. Portable executables require an existing driver or the [official WCH installer](https://www.wch-ic.com/downloads/CH341SER_EXE.html). Uninstalling ESP Gauge leaves the shared Windows driver installed for other CH340 devices.
 
 ```sh
 cd desktop

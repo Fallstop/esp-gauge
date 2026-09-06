@@ -16,6 +16,7 @@ jobs:
         run: git config --global core.autocrlf false
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
+      - run: uv run python -m unittest discover -s tests -p 'test_*.py'
       - run: uv tool install --with pip platformio==6.1.19
       - run: pio run -d firmware
       - run: c++ -std=c++17 -Wall -Wextra -Werror -Ifirmware/include tests/engine_test.cpp -o /tmp/engine-test && /tmp/engine-test

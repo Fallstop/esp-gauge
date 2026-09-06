@@ -13,3 +13,5 @@ Native updating and discovery also use espflash (MIT/Apache-2.0), reqwest (MIT/A
 Super Tracker's public data is credited to [Super Tracker and its source retailers](https://supertracker.nz), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). It is a nowcast, not an official statistic.
 
 Linux AppImages include the [AppImageKit runtime](https://github.com/AppImage/AppImageKit), distributed under the upstream MIT license and bundled component notices. CI pins the runtime download by SHA-256; runtime source and dependency licensing remain available from that upstream project.
+
+Windows installers include WCH's original [CH340/CH341 driver installer](https://www.wch-ic.com/downloads/CH341SER_EXE.html), version 4.0 (2026-06-24), copyright WCH 2001–2026. WCH describes this package as intended for distribution with products. It remains vendor software under WCH's terms, separate from ESP Gauge's license. The unmodified executable preserves the vendor signature and driver catalog. Source details and the pinned SHA-256 are in `desktop/src-tauri/windows/drivers/README.txt`, also shipped as `drivers/README.txt` in Windows packages.

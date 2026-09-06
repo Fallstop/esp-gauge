@@ -8,6 +8,11 @@ from urllib.parse import quote
 source, output, tag = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
 output.mkdir(parents=True, exist_ok=True)
 version = tag.removeprefix('v')
+packages = {
+    'darwin-aarch64': ('macOS-Apple-Silicon', ('.app.tar.gz', '.dmg')),
+    'linux-x86_64': ('Linux-x64', ('.AppImage', '.deb', '.rpm')),
+    'windows-x86_64': ('Windows-x64', ('.exe', '.msi')),
+}
 platforms = {}
 for directory in sorted(source.iterdir()):
     if not directory.is_dir():
@@ -19,13 +24,15 @@ for directory in sorted(source.iterdir()):
         assert json.loads((output / 'firmware.json').read_text())['version'] == version
         continue
     platform = directory.name.removeprefix('desktop-')
+    label, extensions = packages[platform]
     for file in directory.rglob('*'):
         if not file.is_file() or not file.name.endswith(('.dmg', '.deb', '.rpm', '.AppImage', '.exe', '.msi', '.app.tar.gz')):
             continue
-        if file.name.endswith('.app.tar.gz'):
-            name = f'ESP.Gauge_{version}_{platform}.app.tar.gz'
-        else:
-            name = file.name.replace(' ', '.')
+        extension = next((ext for ext in extensions if file.name.endswith(ext)), None)
+        assert extension, f'Unexpected package for {platform}: {file.name}'
+        kind = '-Setup' if extension == '.exe' else ''
+        name = f'ESP-Gauge-{version}-{label}{kind}{extension}'
+        assert not (output / name).exists(), f'Duplicate release asset: {name}'
         shutil.copyfile(file, output / name)
         signature = Path(str(file) + '.sig')
         if signature.exists():
@@ -33,7 +40,7 @@ for directory in sorted(source.iterdir()):
             if name.endswith(('.app.tar.gz', '.AppImage', '.exe')):
                 assert platform not in platforms, f'Duplicate updater platform: {platform}'
                 platforms[platform] = {'signature': signature.read_text().strip(), 'url': f'https://github.com/Fallstop/esp-gauge/releases/download/{tag}/{quote(name)}'}
-expected = {'darwin-aarch64', 'linux-x86_64', 'windows-x86_64'}
+expected = set(packages)
 assert set(platforms) == expected, f'Missing updater platforms: {expected - set(platforms)}'
 assert (output / 'firmware.json.sig').exists(), 'Unsigned firmware manifest'
 (output / 'latest.json').write_text(json.dumps({'version': version, 'notes': f'ESP Gauge {version}', 'platforms': platforms}, indent=2) + '\n')

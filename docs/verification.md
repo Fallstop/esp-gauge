@@ -2,6 +2,12 @@
 
 The first sections record the original 2.0 implementation. The continuation sections below record the released updates and supersede the original installation and calibration state.
 
+## Windows driver bundling — unreleased
+
+The NSIS package now includes the original WCH CH341SER.EXE 4.0, offers interactive driver setup, and creates a Start menu shortcut for retrying it. Updates and silent/passive setup skip the driver prompt. MSI resources include the same executable for separate administrator installation. The driver package contains the board's `1a86:7523` hardware ID and WCH's embedded publisher certificate.
+
+On macOS, the frontend build passed with zero Svelte diagnostics. Tauri generated an NSIS installer with the new hooks and resources using the existing cross-compiled Windows executable; this was a packaging check, not a fresh Windows application build. Extracting its driver reproduced the vendor file byte for byte. The packaging checksum check accepted the original and rejected modified and missing files. Windows CI now checks Authenticode validity and the expected WCH publisher before release. That Windows check, MSI generation, UAC acceptance/cancellation, and clean-machine driver/USB operation have not been executed locally.
+
 ## Original implementation: physical board
 
 ESP32-D0WD-V3 revision 3.1, CH340C `1a86:7523`, protocol-2 device `107872DF948C`, connected to macOS over USB. GPIO mapping checked against the existing pin map. Only PWM6 has a gauge. A full 4 MB flash backup was taken before updating firmware and remains in the local, ignored `artifacts` directory.
