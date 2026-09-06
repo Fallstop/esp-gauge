@@ -6,6 +6,10 @@ Local verification on 2026-09-06: Svelte/TypeScript and production UI build pass
 
 Read-only native sampling on this Apple Silicon Mac returned GPU usage, CPU temperature, GPU temperature and the system volume setting. Playback capture was not exercised against live audio. Windows/Linux hardware readings and a physical firmware flash were not exercised locally; the cross-platform workflows build and test their native adapters. Super Tracker production DNS was unavailable: its product/store contract was checked against the local server's current OpenAPI definition, with parser and browser fixtures covering price freshness and strict store selection.
 
+[Release 2.3.0](https://github.com/Fallstop/esp-gauge/releases/tag/v2.3.0) was published from `9e3fd83`, including the Pulse logo commit, after the [complete release workflow](https://github.com/Fallstop/esp-gauge/actions/runs/34013850224) passed. Firmware, browser tests, native tests and Clippy passed on every release platform. Windows exercised the driver-store query without a connected board; its short-record alignment issue was fixed before release. The Linux job executed the final packaged AppImage.
+
+All 20 published assets matched GitHub's sizes and SHA-256 digests. All seven app/firmware signatures verified with the existing public key. Release-note links, updater platform URLs and signatures, and firmware segment checksums matched. The Windows installer contained the pinned WCH driver byte for byte. The macOS archive contains the new Pulse icon, version 2.3.0, the system-audio permission description and a macOS 14.6 minimum. Debian package metadata declares ALSA and PulseAudio runtime dependencies. The release is the public latest version. Physical firmware installation and live playback capture remain unverified for this release.
+
 
 The first sections record the original 2.0 implementation. The continuation sections below record the released updates and supersede the original installation and calibration state.
 
