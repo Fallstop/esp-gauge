@@ -7,6 +7,21 @@ on:
 permissions:
   contents: read
 jobs:
+  interface:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
   firmware:
     runs-on: ubuntu-24.04
     steps:
@@ -50,7 +65,7 @@ jobs:
           workspaces: desktop/src-tauri
           shared-key: ${{ matrix.os }}
       - if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libudev-dev libxdo-dev
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libasound2-dev libpulse-dev libudev-dev libxdo-dev
       - name: Use compatible AppImage runtime
         if: runner.os == 'Linux'
         run: |

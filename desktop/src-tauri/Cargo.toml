@@ -1,6 +1,6 @@
 [package]
 name = "esp-gauge"
-version = "2.2.4"
+version = "2.3.0"
 description = "Physical instruments for your digital world"
 authors = ["ESP Gauge contributors"]
 edition = "2021"
@@ -32,9 +32,22 @@ tauri-plugin-updater = "2"
 rusqlite = { version = "0.38", features = ["bundled"] }
 fs2 = "0.4"
 dirs = "6"
+cpal = "0.18.2"
+volumecontrol = "0.1.4"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+core-foundation = "0.10"
+macpow = { version = "0.1.19", default-features = false }
+
+[target.'cfg(any(windows, target_os = "linux"))'.dependencies]
+nvml-wrapper = "0.13"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+cpal = { version = "0.18.2", features = ["pulseaudio"] }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_Devices_DeviceAndDriverInstallation", "Win32_Foundation", "Win32_UI_Shell", "Win32_System_Com", "Win32_System_Registry", "Win32_System_Threading"] }
+wmi = { version = "0.18.4", default-features = false }
+windows-sys = { version = "0.61", features = ["Win32_Devices_DeviceAndDriverInstallation", "Win32_Foundation", "Win32_UI_Shell", "Win32_System_Com", "Win32_System_Registry", "Win32_System_Threading", "Win32_System_Performance"] }
 
 [profile.release]
 codegen-units = 1

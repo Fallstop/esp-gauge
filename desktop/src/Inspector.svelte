@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { sources, sourceFor, reading, type Channel, type Snapshot } from './model';
+  import { availableSources, sourceFor, reading, type Channel, type Snapshot } from './model';
+  import { newerVersion } from './updateState.svelte';
+  import SourceSettings from './SourceSettings.svelte';
   import Dial from './Dial.svelte';
   import SourcePicker from './SourcePicker.svelte';
   import HeaderIllustration from './HeaderIllustration.svelte';
@@ -33,6 +35,9 @@
         : (status.board.positions?.[port] ?? 0)
       : 0,
   );
+  let supportsCurve = $derived(
+    /^\d+\.\d+\.\d+/.test(status.firmware) && !newerVersion('2.3.0', status.firmware),
+  );
   let clock = $derived(source.group === 'Clock');
   let now = $state(new Date());
   import { onMount } from 'svelte';
@@ -51,7 +56,7 @@
 </script>
 
 <div class="inspector-heading">
-  <span class="eyebrow">PWM{port + 1}</span>{#if channel.enabled}<span
+  {#key port}<span class="port-heading">PWM{port + 1}</span>{/key}{#if channel.enabled}<span
       class="small-dot"
       class:muted={!status.connected || status.paused}
     ></span>{/if}
@@ -79,6 +84,7 @@
   <div class="readout">
     <Dial
       {position}
+      curve={channel.curve ?? 0}
       min={channel.input_min ?? 0}
       max={source.group === 'Clock' ? source.scale : source.id === 'constant' ? 100 : channel.scale}
       label="Commanded needle position"
@@ -87,7 +93,9 @@
       {#if !status.connected || status.paused}<span>—</span>{:else if clock}<span class="clock-reading"
           >{status.board.clock_valid ? clockText : '—'}</span
         >{:else}<span
-          >{value == null ? '—' : value.toFixed(value < 10 && source.unit === 'MiB/s' ? 2 : 0)}</span
+          >{value == null
+            ? '—'
+            : value.toFixed(source.unit === 'NZ$' ? 2 : value < 10 && source.unit === 'MiB/s' ? 2 : 0)}</span
         ><span class="reading-unit">{source.unit}</span>{/if}
     </div>
     <span class="readout-caption"
@@ -106,13 +114,15 @@
     <label for="source">Source</label>
     <SourcePicker
       value={channel.source}
-      options={[...sources, ...status.sources]}
+      options={availableSources(status)}
       disabled={!status.connected}
-      onchange={(s) => onchange({ source: s.id, scale: s.scale, input_min: s.minimum ?? 0 })}
+      onchange={(s) =>
+        onchange({ source: s.id, scale: s.scale, input_min: s.minimum ?? 0, device: '', curve: 0 })}
     />
     <p class="hint">{source.description}</p>
   </div>
-  {#if !['Clock', 'Waveforms'].includes(source.group) && source.id !== 'constant' && !['cpu', 'memory', 'swap', 'disk', 'battery', 'esp_rssi'].includes(source.id)}
+  <SourceSettings {channel} {source} disabled={!status.connected} {onchange} />
+  {#if !['Clock', 'Waveforms'].includes(source.group) && source.id !== 'constant' && !['cpu', 'memory', 'swap', 'disk', 'battery', 'gpu', 'audio', 'volume', 'esp_rssi'].includes(source.id)}
     <div class="field inline-field">
       <label for="scale">Full scale</label>
       <div class="number-unit">
@@ -202,6 +212,35 @@
       </div>
     </div>
   {/if}
+  {#if !clock && source.id !== 'constant'}
+    <div class="field">
+      <label for="output-curve">Output scale</label>
+      <select
+        id="output-curve"
+        value={String(channel.curve ?? 0)}
+        disabled={!status.connected || !supportsCurve}
+        onchange={(e) => onchange({ curve: Number(e.currentTarget.value) })}
+      >
+        <option value="0">Linear · even movement</option>
+        <option value="2">Exponential · emphasise high readings</option>
+        <option value="4">Exponential · strong</option>
+        <option value="-2">Logarithmic · reveal low readings</option>
+        <option value="-4">Logarithmic · strong</option>
+        {#if ![0, 2, 4, -2, -4].includes(channel.curve ?? 0)}<option value={channel.curve}
+            >Custom curve</option
+          >{/if}
+      </select>
+      <p class="hint">
+        {!supportsCurve
+          ? 'Update board firmware to 2.3 or later to use curved scales.'
+          : (channel.curve ?? 0) > 0
+            ? 'More needle travel near the top of the range.'
+            : (channel.curve ?? 0) < 0
+              ? 'Small readings move the needle further. Useful for sound and network traffic.'
+              : 'Equal changes in the reading move the needle equally.'}
+      </p>
+    </div>
+  {/if}
   <div class="field response-field">
     <div class="value-row">
       <label for="response">Needle response</label><span class="mono subtle"
@@ -230,7 +269,7 @@
       disabled={!status.connected}
     />
   </div>
-  {#if ['Clock', 'On board', 'Waveforms'].includes(source.group)}<p class="standalone-note">
+  {#if ['Clock', 'ESP32 board', 'Waveforms'].includes(source.group)}<p class="standalone-note">
       <span>↳</span> Runs on the board{clock
         ? '. Add Wi-Fi in board settings to recover time after power loss.'
         : ', even without this app.'}

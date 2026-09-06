@@ -1,6 +1,7 @@
 #include "gauge_engine.h"
 #include <cassert>
 #include <cstdio>
+#include <initializer_list>
 int main() {
   gauge::Engine e;
   for (unsigned i = 0; i < 6; i++)
@@ -76,6 +77,26 @@ int main() {
   assert(gauge::waveform('r', 2.5, 10, 0) == .25f);
   assert(gauge::waveform('q', 5, 10, 0) == 1);
   assert(gauge::waveform('s', 0, 10, 180) == 1);
+  for (float strength : {-4.f, -2.f, 0.f, 2.f, 4.f}) {
+    assert(gauge::curveValue(-1, strength) == 0);
+    assert(fabs(gauge::curveValue(2, strength) - 1) < 1e-6);
+    float previous = -1;
+    for (int i = 0; i <= 100; i++) {
+      float value = gauge::curveValue(i / 100.f, strength);
+      assert(value >= previous && value >= 0 && value <= 1.000001);
+      previous = value;
+    }
+  }
+  assert(fabs(gauge::curveValue(.5, 2) - .2689414) < 1e-6);
+  assert(fabs(gauge::curveValue(.5, -2) - .7310586) < 1e-6);
+  assert(gauge::curveValue(.25, 0) == .25f);
+  c.available = true; c.reverse = false; c.curve = 2; c.target = .5f;
+  e.tick(14040, 10);
+  assert(c.position > .268 && c.position < .270);
+  assert(e.duty(5) > 1200 && e.duty(5) < 1400);
+  c.available = false;
+  e.tick(14050, 10);
+  assert(e.duty(5) == 0);
   puts("engine: boot, port isolation, limits, watchdog, rollover, smoothing, missing sources, reversal, "
        "clocks OK");
 }

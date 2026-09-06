@@ -15,6 +15,8 @@ pub struct UpdateStatus {
     pub busy: bool,
     pub stage: String,
     pub progress: f64,
+    pub indeterminate: bool,
+    pub operation: String,
     pub error: Option<String>,
 }
 #[derive(Default)]
@@ -32,10 +34,17 @@ impl Updates {
     pub fn progress(&self, app: &AppHandle, stage: &str, progress: f64) {
         self.publish(app, |s| {
             s.stage = stage.into();
-            s.progress = progress;
+            s.progress = progress.clamp(0.0, 100.0);
+            s.indeterminate = false;
         });
     }
-    fn begin(&self, app: &AppHandle) -> Result<(), String> {
+    pub fn waiting(&self, app: &AppHandle, stage: &str) {
+        self.publish(app, |s| {
+            s.stage = stage.into();
+            s.indeterminate = true;
+        });
+    }
+    fn begin(&self, app: &AppHandle, operation: &str) -> Result<(), String> {
         self.busy
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
             .map_err(|_| "An update is already in progress.")?;
@@ -43,6 +52,9 @@ impl Updates {
             s.busy = true;
             s.error = None;
             s.progress = 0.0;
+            s.operation = operation.into();
+            s.stage = "Preparing update".into();
+            s.indeterminate = true;
         });
         Ok(())
     }
@@ -50,7 +62,18 @@ impl Updates {
         self.busy.store(false, Ordering::SeqCst);
         self.publish(app, |s| {
             s.busy = false;
-            s.stage.clear();
+            s.indeterminate = false;
+            if result.is_ok() {
+                s.progress = 100.0;
+                s.stage = match s.operation.as_str() {
+                    "firmware" => "Firmware installed · board verified",
+                    "app" => "App installed",
+                    _ => "",
+                }
+                .into();
+            } else {
+                s.stage = "Update could not finish".into();
+            }
             s.error = result.as_ref().err().cloned();
         });
     }
@@ -65,8 +88,8 @@ pub fn update_status(updates: State<'_, Updates>) -> UpdateStatus {
 #[tauri::command]
 pub async fn check_updates(app: AppHandle) -> Result<(), String> {
     let updates = app.state::<Updates>();
-    updates.begin(&app)?;
-    updates.progress(&app, "Checking releases", 0.0);
+    updates.begin(&app, "check")?;
+    updates.waiting(&app, "Checking releases");
     let handle = app.clone();
     let result = tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
         let client = releases::client()?;
@@ -104,7 +127,7 @@ pub async fn check_updates(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub async fn install_firmware(app: AppHandle, path: String) -> Result<(), String> {
     let updates = app.state::<Updates>();
-    updates.begin(&app)?;
+    updates.begin(&app, "firmware")?;
     let handle = app.clone();
     let result = tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
         let updates = handle.state::<Updates>();
@@ -114,8 +137,14 @@ pub async fn install_firmware(app: AppHandle, path: String) -> Result<(), String
             .unwrap()
             .clone()
             .ok_or("Check for a release before installing firmware.")?;
-        updates.progress(&handle, "Downloading firmware", 0.0);
-        let data = firmware.download(&release, &releases::client()?)?;
+        updates.waiting(&handle, "Starting firmware download");
+        let data = firmware.download(&release, &releases::client()?, |done, total| {
+            updates.progress(
+                &handle,
+                "Downloading and checking firmware",
+                done as f64 / total.max(1) as f64 * 20.0,
+            );
+        })?;
         firmware_flash::install(&handle, &handle.state::<Service>(), &path, &firmware, &data)
     })
     .await
@@ -127,8 +156,9 @@ pub async fn install_firmware(app: AppHandle, path: String) -> Result<(), String
 #[tauri::command]
 pub async fn install_app_update(app: AppHandle) -> Result<(), String> {
     let updates = app.state::<Updates>();
-    updates.begin(&app)?;
+    updates.begin(&app, "app")?;
     let result = async {
+        updates.waiting(&app, "Checking app update");
         let update = app
             .updater()
             .map_err(|e| e.to_string())?
@@ -136,11 +166,16 @@ pub async fn install_app_update(app: AppHandle) -> Result<(), String> {
             .await
             .map_err(|e| e.to_string())?
             .ok_or("ESP Gauge is already up to date.")?;
+        updates.waiting(&app, "Starting app download");
         let mut downloaded = 0_u64;
         let bytes = update
             .download(
                 |length, total| {
                     downloaded += length as u64;
+                    if total.is_none() {
+                        updates.waiting(&app, "Downloading app");
+                        return;
+                    }
                     updates.progress(
                         &app,
                         "Downloading app",
@@ -159,7 +194,7 @@ pub async fn install_app_update(app: AppHandle) -> Result<(), String> {
         })
         .await
         .map_err(|e| e.to_string())??;
-        updates.progress(&app, "Installing app", 100.0);
+        updates.waiting(&app, "Installing app · restart follows");
         if let Err(error) = update.install(bytes) {
             let service = app.state::<Service>().inner().clone();
             let _ = tauri::async_runtime::spawn_blocking(move || {

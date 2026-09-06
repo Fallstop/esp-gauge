@@ -7,6 +7,8 @@ export type UpdateStatus = {
   busy: boolean;
   stage: string;
   progress: number;
+  indeterminate: boolean;
+  operation: string;
   error: string | null;
 };
 export const updates = $state<UpdateStatus>({
@@ -16,6 +18,8 @@ export const updates = $state<UpdateStatus>({
   busy: false,
   stage: '',
   progress: 0,
+  indeterminate: false,
+  operation: '',
   error: null,
 });
 export function newerVersion(candidate: string, installed: string): boolean {
@@ -48,7 +52,9 @@ export function startUpdates() {
     else stop = fn;
   });
   void invoke<UpdateStatus>('update_status').then((value) => Object.assign(updates, value));
-  const first = setTimeout(() => void runUpdate('check_updates'), 8000);
+  const first = setTimeout(() => {
+    if (!updates.busy) void runUpdate('check_updates');
+  }, 8000);
   const interval = setInterval(
     () => {
       if (!updates.busy) void runUpdate('check_updates');

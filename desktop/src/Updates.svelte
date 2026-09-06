@@ -83,12 +83,10 @@
       <p class="hint">Keep USB connected during installation. Your gauge settings stay on the board.</p>
     {:else}<p class="hint">Connect your board to install firmware.</p>{/if}
   </div>
-  {#if updates.busy}
-    <div class="update-progress" role="status">
-      <span>{updates.stage}…</span><progress max="100" value={updates.progress}></progress>
-    </div>
-  {:else}<button class="text-button" onclick={() => runUpdate('check_updates')} disabled={installing}
-      >Check for updates</button
+  {#if !updates.busy}<button
+      class="text-button"
+      onclick={() => runUpdate('check_updates')}
+      disabled={installing}>Check for updates</button
     >{/if}
-  {#if updates.error}<p class="error" role="alert">{updates.error}</p>{/if}
+  {#if updates.busy}<p class="hint">Follow the update below the PCB sketch.</p>{/if}
 </div>

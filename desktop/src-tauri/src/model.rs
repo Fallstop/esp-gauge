@@ -59,14 +59,34 @@ impl Config {
             );
         }
         for c in &self.channels {
-            for (key, min, max) in [("period_s", 0.1, 86400.0), ("phase_deg", 0.0, 360.0)] {
+            for (key, min, max) in [
+                ("period_s", 0.1, 86400.0),
+                ("phase_deg", 0.0, 360.0),
+                ("curve", -4.0, 4.0),
+            ] {
                 if let Some(value) = c.extra.get(key) {
                     if !value
                         .as_f64()
                         .is_some_and(|v| v.is_finite() && (min..=max).contains(&v))
                     {
-                        return Err("Waveform settings are outside the supported range.".into());
+                        return Err("Source settings are outside the supported range.".into());
                     }
+                }
+            }
+            for key in ["device", "product_name", "store_name"] {
+                if c.extra
+                    .get(key)
+                    .is_some_and(|v| v.as_str().is_none_or(|s| s.len() > 160))
+                {
+                    return Err("Source selection is too long.".into());
+                }
+            }
+            for key in ["product_id", "store_id"] {
+                if c.extra
+                    .get(key)
+                    .is_some_and(|v| v.as_u64().is_none_or(|n| n > i32::MAX as u64))
+                {
+                    return Err("Invalid product or store selection.".into());
                 }
             }
             if c.min_duty > c.max_duty
@@ -92,6 +112,35 @@ impl Config {
             return Err("The board configuration is too large.".into());
         }
         Ok(())
+    }
+}
+pub fn sample_key(channel: &Channel) -> String {
+    match channel.source.as_str() {
+        "supertracker_product" => format!(
+            "product:{}:{}",
+            channel
+                .extra
+                .get("product_id")
+                .and_then(Value::as_u64)
+                .unwrap_or(0),
+            channel
+                .extra
+                .get("store_id")
+                .and_then(Value::as_u64)
+                .unwrap_or(0)
+        ),
+        "disk" | "network_down" | "network_up" | "gpu" | "cpu_temperature" | "gpu_temperature" => {
+            match channel
+                .extra
+                .get("device")
+                .and_then(Value::as_str)
+                .filter(|v| !v.is_empty())
+            {
+                Some(device) => format!("{}:{device}", channel.source),
+                None => channel.source.clone(),
+            }
+        }
+        _ => channel.source.clone(),
     }
 }
 pub fn normalize(value: f64, scale: f64) -> f64 {
@@ -135,6 +184,39 @@ mod tests {
             c,
             serde_json::from_str(&serde_json::to_string(&c).unwrap()).unwrap()
         );
+    }
+    #[test]
+    fn source_options_and_curves_are_validated_and_isolated() {
+        let mut config = Config::default();
+        config.channels[0].source = "disk".into();
+        config.channels[0]
+            .extra
+            .insert("device".into(), serde_json::json!("/Volumes/External"));
+        assert_eq!(sample_key(&config.channels[0]), "disk:/Volumes/External");
+        assert_eq!(sample_key(&config.channels[1]), "cpu");
+        config.channels[1].source = "supertracker_product".into();
+        config.channels[1]
+            .extra
+            .insert("product_id".into(), serde_json::json!(285));
+        config.channels[1]
+            .extra
+            .insert("store_id".into(), serde_json::json!(42));
+        assert_eq!(sample_key(&config.channels[1]), "product:285:42");
+        config.channels[0]
+            .extra
+            .insert("curve".into(), serde_json::json!(-4));
+        assert!(config.validate().is_ok());
+        config.channels[0]
+            .extra
+            .insert("curve".into(), serde_json::json!(4.1));
+        assert!(config.validate().is_err());
+        config.channels[0]
+            .extra
+            .insert("curve".into(), serde_json::json!(0));
+        config.channels[1]
+            .extra
+            .insert("store_id".into(), serde_json::json!(-1));
+        assert!(config.validate().is_err());
     }
     #[test]
     fn normalization_is_bounded() {

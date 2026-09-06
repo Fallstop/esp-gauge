@@ -6,99 +6,183 @@
     options = sources,
     disabled = false,
     onchange,
-  }: { value: string; options?: Source[]; disabled?: boolean; onchange: (source: Source) => void } = $props();
+  }: {
+    value: string;
+    options?: Source[];
+    disabled?: boolean;
+    onchange: (source: Source) => void;
+  } = $props();
+  const categories = [
+    { id: 'computer', name: 'This computer', detail: 'Processor, graphics, storage & sound' },
+    { id: 'board', name: 'ESP32 board', detail: 'Sensors, clocks & waveforms' },
+    { id: 'ai', name: 'AI tools', detail: 'Agents, activity & usage limits' },
+    { id: 'prices', name: 'Prices', detail: 'Products & NZ food prices' },
+  ];
+  const categoryFor = (s: Source) =>
+    ['This computer', 'Computer'].includes(s.group)
+      ? 'computer'
+      : ['ESP32 board', 'On board', 'Clock', 'Waveforms'].includes(s.group)
+        ? 'board'
+        : s.group === 'Super Tracker'
+          ? 'prices'
+          : 'ai';
   let open = $state(false),
     query = $state(''),
-    trigger: HTMLButtonElement;
-  let panel = $state<HTMLDivElement>(),
+    category = $state('');
+  let trigger: HTMLButtonElement,
+    panel = $state<HTMLDivElement>(),
     search = $state<HTMLInputElement>();
   let top = $state(0),
     left = $state(0),
-    width = $state(280);
+    width = $state(360),
+    height = $state(460);
   let matches = $derived(
-    options.filter((s) => `${s.name} ${s.group}`.toLowerCase().includes(query.toLowerCase())),
+    options.filter((s) =>
+      query.trim()
+        ? `${s.name} ${s.group} ${categories.find((c) => c.id === categoryFor(s))?.name}`
+            .toLowerCase()
+            .includes(query.trim().toLowerCase())
+        : categoryFor(s) === category,
+    ),
   );
+  let current = $derived(options.find((s) => s.id === value) ?? sourceFor(value));
   async function show() {
     const rect = trigger.getBoundingClientRect();
-    left = rect.left;
-    width = rect.width;
-    top = Math.max(12, rect.top - 366);
+    width = Math.min(380, window.innerWidth - 24);
+    height = Math.min(470, window.innerHeight - 24);
+    left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12));
+    top = Math.max(12, Math.min(rect.top - height / 2, window.innerHeight - height - 12));
     query = '';
+    category = '';
     open = true;
     await tick();
     search?.focus();
   }
-  function choose(source: Source) {
-    onchange(source);
+  function close() {
     open = false;
     trigger.focus();
+  }
+  function choose(source: Source) {
+    onchange(source);
+    close();
   }
   function keydown(event: KeyboardEvent) {
     if (event.key === 'Escape') {
       event.preventDefault();
-      open = false;
-      trigger.focus();
-      return;
+      close();
     }
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
-      const options = Array.from(panel?.querySelectorAll<HTMLButtonElement>('[role=option]') ?? []);
-      const index = options.indexOf(document.activeElement as HTMLButtonElement);
-      const next = event.key === 'ArrowDown' ? index + 1 : index < 0 ? options.length - 1 : index - 1;
-      options[(next + options.length) % options.length]?.focus();
+      const entries = Array.from(panel?.querySelectorAll<HTMLButtonElement>('[data-choice]') ?? []).filter(
+        (button) => !button.disabled,
+      );
+      const index = entries.indexOf(document.activeElement as HTMLButtonElement);
+      const next = event.key === 'ArrowDown' ? index + 1 : index < 0 ? entries.length - 1 : index - 1;
+      entries[(next + entries.length) % entries.length]?.focus();
     }
-    if (event.key === 'Enter' && document.activeElement === search && matches[0]) {
+    if (event.key === 'Tab' && panel) {
+      const entries = Array.from(panel.querySelectorAll<HTMLElement>('button, input'));
+      if (event.shiftKey && document.activeElement === entries[0]) {
+        event.preventDefault();
+        entries.at(-1)?.focus();
+      } else if (!event.shiftKey && document.activeElement === entries.at(-1)) {
+        event.preventDefault();
+        entries[0]?.focus();
+      }
+    }
+    if (event.key === 'Enter' && document.activeElement === search && matches[0] && query.trim()) {
       event.preventDefault();
       choose(matches[0]);
     }
   }
 </script>
 
+<svelte:window onresize={() => (open = false)} />
 <button
   id="source"
   class="source-trigger"
   aria-label="Source"
-  aria-haspopup="listbox"
+  aria-haspopup="dialog"
   aria-expanded={open}
   {disabled}
   bind:this={trigger}
-  onclick={() => (open ? (open = false) : void show())}
-  ><span>{(options.find((s) => s.id === value) ?? sourceFor(value)).name}</span><span aria-hidden="true"
-    >⌄</span
-  ></button
+  onclick={() => (open ? close() : void show())}
 >
+  <span><small>{current.group}</small>{current.name}</span><span aria-hidden="true">⌄</span>
+</button>
 {#if open}
-  <button
-    class="picker-backdrop"
-    tabindex="-1"
-    aria-label="Close source picker"
-    onclick={() => (open = false)}
-  ></button>
+  <button class="picker-backdrop" tabindex="-1" aria-label="Close source picker" onclick={close}></button>
   <div
     class="source-picker"
     bind:this={panel}
     style:top="{top}px"
     style:left="{left}px"
     style:width="{width}px"
+    style:height="{height}px"
     onkeydown={keydown}
-    role="presentation"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Choose a source"
+    tabindex="-1"
   >
-    <input aria-label="Find a source" placeholder="Find a source…" bind:this={search} bind:value={query} />
-    <div role="listbox" aria-label="Gauge source" class="source-options">
-      {#each [...new Set(matches.map((s) => s.group))] as group}
-        {@const entries = matches.filter((s) => s.group === group)}
-        {#if entries.length}<div role="group" aria-label={group}>
-            <span class="source-group">{group}</span>{#each entries as source}<button
+    <div class="picker-title">
+      <strong>Choose a source</strong><button aria-label="Close" onclick={close}>×</button>
+    </div>
+    <input
+      aria-label="Find a source"
+      placeholder="Search all sources…"
+      bind:this={search}
+      bind:value={query}
+    />
+    {#if !query.trim() && !category}
+      <div class="source-categories">
+        {#each categories as c}
+          {@const count = options.filter((s) => categoryFor(s) === c.id).length}
+          <button
+            data-choice
+            onclick={async () => {
+              category = c.id;
+              await tick();
+              search?.focus();
+            }}
+            disabled={!count}
+          >
+            <span><strong>{c.name}</strong><small>{c.detail}</small></span><span aria-hidden="true">→</span>
+          </button>
+        {/each}
+      </div>
+      <p class="picker-foot">Currently: {current.group} · {current.name}</p>
+    {:else}
+      <button
+        class="picker-back"
+        onclick={() => {
+          query = '';
+          category = '';
+          search?.focus();
+        }}
+        >← All categories{category && !query.trim()
+          ? ` / ${categories.find((c) => c.id === category)?.name}`
+          : ''}</button
+      >
+      <div role="listbox" aria-label="Gauge source" class="source-options">
+        {#each [...new Set(matches.map((s) => s.group))] as group}
+          <div role="group" aria-label={group}>
+            <span class="source-group">{group}</span>
+            {#each matches.filter((s) => s.group === group) as source}
+              <button
+                data-choice
                 type="button"
                 role="option"
                 aria-selected={source.id === value}
                 onclick={() => choose(source)}
-                ><span>{source.name}</span>{#if source.id === value}<span aria-hidden="true">✓</span
-                  >{/if}</button
-              >{/each}
-          </div>{/if}
-      {/each}
-      {#if !matches.length}<p class="no-sources">No matching sources.</p>{/if}
-    </div>
+              >
+                <span>{source.name}</span>{#if source.id === value}<span aria-hidden="true">✓</span>{/if}
+              </button>
+            {/each}
+          </div>
+        {/each}
+        {#if !matches.length}<p class="no-sources">No matching sources. Try a shorter search.</p>{/if}
+      </div>
+    {/if}
   </div>
 {/if}

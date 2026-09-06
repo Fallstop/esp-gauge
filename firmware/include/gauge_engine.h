@@ -9,8 +9,13 @@ struct Channel {
   bool enabled = false, reverse = false;
   uint16_t minDuty = 0, maxDuty = 0, response = 500;
   float target = 0, position = 0;
+  float curve = 0;
   bool available = false;
 };
+inline float curveValue(float value, float strength) {
+  float x = fmaxf(0, fminf(1, value));
+  return fabsf(strength) < .001f ? x : expm1f(strength * x) / expm1f(strength);
+}
 struct Engine {
   Channel channels[COUNT];
   int calibration = -1;
@@ -38,7 +43,7 @@ struct Engine {
         c.position = 0;
         continue;
       }
-      float target = fmaxf(0, fminf(1, c.target));
+      float target = curveValue(c.target, c.curve);
       c.position += (target - c.position) * (c.response ? 1 - expf(-float(dt) / c.response) : 1);
     }
   }

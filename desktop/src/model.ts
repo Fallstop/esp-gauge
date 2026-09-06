@@ -8,6 +8,12 @@ export type Channel = {
   scale: number;
   input_min: number;
   reverse: boolean;
+  curve?: number;
+  device?: string;
+  product_id?: number;
+  store_id?: number;
+  product_name?: string;
+  store_name?: string;
   [key: string]: unknown;
 };
 export type Config = { version: number; channels: Channel[]; [key: string]: unknown };
@@ -75,12 +81,13 @@ export type Source = {
   description: string;
   detail?: string;
   minimum?: number;
+  options?: { id: string; name: string }[];
 };
 export const sources: Source[] = [
   {
     id: 'cpu',
     name: 'CPU usage',
-    group: 'Computer',
+    group: 'This computer',
     unit: '%',
     scale: 100,
     description: 'How hard your processor is working.',
@@ -88,7 +95,7 @@ export const sources: Source[] = [
   {
     id: 'memory',
     name: 'Memory',
-    group: 'Computer',
+    group: 'This computer',
     unit: '%',
     scale: 100,
     description: 'The share of system memory in use.',
@@ -96,7 +103,7 @@ export const sources: Source[] = [
   {
     id: 'swap',
     name: 'Swap',
-    group: 'Computer',
+    group: 'This computer',
     unit: '%',
     scale: 100,
     description: 'The share of swap memory in use.',
@@ -104,7 +111,7 @@ export const sources: Source[] = [
   {
     id: 'disk',
     name: 'Disk space',
-    group: 'Computer',
+    group: 'This computer',
     unit: '%',
     scale: 100,
     description: 'Space used on your system drive.',
@@ -112,7 +119,7 @@ export const sources: Source[] = [
   {
     id: 'network_down',
     name: 'Download',
-    group: 'Computer',
+    group: 'This computer',
     unit: 'MiB/s',
     scale: 10,
     description: 'Incoming traffic across network interfaces.',
@@ -120,7 +127,7 @@ export const sources: Source[] = [
   {
     id: 'network_up',
     name: 'Upload',
-    group: 'Computer',
+    group: 'This computer',
     unit: 'MiB/s',
     scale: 10,
     description: 'Outgoing traffic across network interfaces.',
@@ -128,7 +135,7 @@ export const sources: Source[] = [
   {
     id: 'battery',
     name: 'Battery',
-    group: 'Computer',
+    group: 'This computer',
     unit: '%',
     scale: 100,
     description: 'Your computer’s remaining charge.',
@@ -168,7 +175,7 @@ export const sources: Source[] = [
   {
     id: 'esp_wifi',
     name: 'Wi-Fi networks',
-    group: 'On board',
+    group: 'ESP32 board',
     unit: 'networks',
     scale: 30,
     description: 'Nearby networks seen by the ESP32. Refreshes every 15 seconds.',
@@ -176,7 +183,7 @@ export const sources: Source[] = [
   {
     id: 'esp_ble',
     name: 'Bluetooth devices',
-    group: 'On board',
+    group: 'ESP32 board',
     unit: 'devices',
     scale: 20,
     description: 'Nearby Bluetooth LE advertisers. Refreshes every 15 seconds.',
@@ -185,7 +192,7 @@ export const sources: Source[] = [
   {
     id: 'esp_temperature',
     name: 'Chip temperature',
-    group: 'On board',
+    group: 'ESP32 board',
     unit: '°C',
     scale: 100,
     description: 'The ESP32’s internal temperature.',
@@ -195,7 +202,7 @@ export const sources: Source[] = [
   {
     id: 'esp_rssi',
     name: 'Wi-Fi strength',
-    group: 'On board',
+    group: 'ESP32 board',
     unit: '%',
     scale: 100,
     description: 'The strength of the board’s Wi-Fi connection.',
@@ -203,7 +210,7 @@ export const sources: Source[] = [
   {
     id: 'constant',
     name: 'Fixed position',
-    group: 'On board',
+    group: 'ESP32 board',
     unit: '%',
     scale: 50,
     description: 'Hold the needle at a chosen position.',
@@ -218,13 +225,16 @@ sources.push(
   ].map(([id, name, description]) => ({ id, name, description, group: 'Waveforms', unit: '%', scale: 100 })),
 );
 export const sourceFor = (id: string, status?: Snapshot): Source =>
-  [...sources, ...(status?.sources ?? [])].find((s) => s.id === id) ?? {
+  [...(status?.sources ?? []), ...sources].find((s) => s.id === id) ?? {
     id,
-    name: id,
-    group: 'Computer',
+    name: id === 'supertracker_coverage' ? 'Basket coverage (removed)' : id,
+    group: 'This computer',
     unit: '',
     scale: 100,
-    description: 'This source needs a compatible provider.',
+    description:
+      id === 'supertracker_coverage'
+        ? 'Basket coverage has been removed. Choose a food-price or product source.'
+        : 'This source needs a compatible provider.',
   };
 export function reading(c: Channel, status: Snapshot): number | undefined {
   if (c.source === 'esp_wifi')
@@ -237,5 +247,24 @@ export function reading(c: Channel, status: Snapshot): number | undefined {
   if (c.source === 'esp_rssi')
     return status.board.rssi != null ? Math.min(100, Math.max(0, 2 * (status.board.rssi + 100))) : undefined;
   if (c.source === 'constant') return c.scale;
-  return status.metrics[c.source];
+  return status.metrics[sampleKey(c)];
+}
+
+export function sampleKey(c: Channel): string {
+  if (c.source === 'supertracker_product') return `product:${c.product_id ?? 0}:${c.store_id ?? 0}`;
+  if (
+    ['disk', 'network_down', 'network_up', 'gpu', 'cpu_temperature', 'gpu_temperature'].includes(c.source) &&
+    c.device
+  )
+    return `${c.source}:${c.device}`;
+  return c.source;
+}
+export function availableSources(status: Snapshot): Source[] {
+  const combined = new Map(sources.map((s) => [s.id, s]));
+  for (const source of status.sources) combined.set(source.id, source);
+  if (status.metrics.battery == null) combined.delete('battery');
+  return [...combined.values()];
+}
+export function inverseCurve(position: number, strength = 0): number {
+  return Math.abs(strength) < 0.001 ? position : Math.log1p(position * Math.expm1(strength)) / strength;
 }

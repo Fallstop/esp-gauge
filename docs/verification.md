@@ -1,5 +1,12 @@
 # Verification record — 5–6 September 2026
 
+## 2.3.0 source and update polish
+
+Local verification on 2026-09-06: Svelte/TypeScript and production UI build passed with no warnings; 19 Rust tests and strict Clippy passed; the firmware engine suite (including curved endpoints, monotonicity, reversal and unavailable outputs), three packaging tests and PlatformIO firmware build passed. Five Playwright checks cover category/search navigation, hidden battery, separate disk assignments, product/store locking, update progress through disconnection, small-window layout and the old-firmware curve guard. Browser screenshots were inspected at 880×580.
+
+Read-only native sampling on this Apple Silicon Mac returned GPU usage, CPU temperature, GPU temperature and the system volume setting. Playback capture was not exercised against live audio. Windows/Linux hardware readings and a physical firmware flash were not exercised locally; the cross-platform workflows build and test their native adapters. Super Tracker production DNS was unavailable: its product/store contract was checked against the local server's current OpenAPI definition, with parser and browser fixtures covering price freshness and strict store selection.
+
+
 The first sections record the original 2.0 implementation. The continuation sections below record the released updates and supersede the original installation and calibration state.
 
 ## Windows driver bundling and 2.2.4 release

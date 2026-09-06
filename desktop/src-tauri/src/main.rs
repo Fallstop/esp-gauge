@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+mod audio;
 mod firmware_flash;
+mod hardware;
 #[cfg(target_os = "macos")]
 mod mac_menu;
 mod metrics;
@@ -93,9 +95,10 @@ fn main() {
         let mut metrics = metrics::Metrics::new();
         std::thread::sleep(std::time::Duration::from_millis(800));
         let providers = providers::diagnose();
+        let hardware = hardware::Hardware::new().sample();
         println!(
             "{}",
-            json!({"version":env!("CARGO_PKG_VERSION"), "platform":std::env::consts::OS, "metrics":metrics.sample(), "usb_candidates":transport::candidates(),"sources":providers.sources,"provider_metrics":providers.values})
+            json!({"version":env!("CARGO_PKG_VERSION"), "platform":std::env::consts::OS, "metrics":metrics.sample(), "usb_candidates":transport::candidates(),"sources":providers.sources,"provider_metrics":providers.values,"hardware_sources":hardware.sources,"hardware_metrics":hardware.values})
         );
         return;
     }
@@ -185,6 +188,8 @@ fn main() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            providers::products::search_products,
+            providers::products::product_stores,
             usb_driver::usb_driver_status,
             usb_driver::install_usb_driver,
             updates::check_updates,

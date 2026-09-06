@@ -1,6 +1,6 @@
 use crate::{
     metrics::{Metrics, Samples},
-    model::{autonomous, normalize, Config},
+    model::{autonomous, normalize, sample_key, Config},
     transport::{self, Link},
 };
 use serde::Serialize;
@@ -103,12 +103,24 @@ fn publish(app: &AppHandle, shared: &Arc<Mutex<Snapshot>>, state: &Snapshot) {
 fn run(app: AppHandle, rx: mpsc::Receiver<Job>, shared: Arc<Mutex<Snapshot>>) {
     let mut state = Snapshot::default();
     let mut metrics = Metrics::new();
+    let audio = crate::audio::Audio::start();
+    let hardware = Arc::new(Mutex::new(crate::providers::Feed::default()));
+    let hardware_feed = hardware.clone();
+    thread::spawn(move || {
+        let mut sampler = crate::hardware::Hardware::new();
+        loop {
+            *hardware_feed.lock().unwrap() = sampler.sample();
+            thread::sleep(Duration::from_secs(2));
+        }
+    });
     let providers = crate::providers::Providers::start();
     let mut link: Option<Link> = None;
     let mut seen: HashMap<String, (Option<String>, Instant)> = HashMap::new();
     let mut probing: Option<(String, mpsc::Receiver<Result<Link, String>>)> = None;
     let mut last_scan = Instant::now() - Duration::from_secs(10);
     let mut last_sample = Instant::now() - Duration::from_secs(1);
+    let mut last_metrics = Instant::now() - Duration::from_secs(1);
+    let mut base_metrics = Samples::new();
     let mut last_clock = Instant::now();
     let mut wifi_scan = Instant::now() - Duration::from_secs(60);
     let mut calibrating = false;
@@ -191,6 +203,16 @@ fn run(app: AppHandle, rx: mpsc::Receiver<Job>, shared: Arc<Mutex<Snapshot>>) {
                         {
                             return Err(
                                 "Update this board’s firmware to use waveform generators.".into()
+                            );
+                        }
+                        if c.channels.iter().any(|c| {
+                            c.extra.get("curve").and_then(Value::as_f64).unwrap_or(0.0) != 0.0
+                        }) && semver::Version::parse(&l.firmware)
+                            .map_or(true, |v| v < semver::Version::new(2, 3, 0))
+                        {
+                            return Err(
+                                "Update board firmware to 2.3 or later to use curved scales."
+                                    .into(),
                             );
                         }
                         if l.max_duty < 1000
@@ -305,16 +327,30 @@ fn run(app: AppHandle, rx: mpsc::Receiver<Job>, shared: Arc<Mutex<Snapshot>>) {
             }
             publish(&app, &shared, &state);
         }
-        if last_sample.elapsed() >= Duration::from_millis(750) {
+        let wants_audio = !state.paused
+            && !maintenance
+            && state.connected
+            && state
+                .config
+                .as_ref()
+                .is_some_and(|c| c.channels.iter().any(|c| c.enabled && c.source == "audio"));
+        if last_sample.elapsed() >= Duration::from_millis(if wants_audio { 125 } else { 750 }) {
             last_sample = Instant::now();
-            state.metrics = metrics.sample();
-            let external = providers.snapshot(state.config.as_ref().is_some_and(|c| {
-                c.channels
-                    .iter()
-                    .any(|c| c.enabled && c.source.starts_with("supertracker_"))
-            }));
+            if last_metrics.elapsed() >= Duration::from_millis(750) {
+                base_metrics = metrics.sample();
+                last_metrics = Instant::now();
+            }
+            state.metrics = base_metrics.clone();
+            let external = providers.snapshot(state.config.as_ref());
             state.metrics.extend(external.values);
-            state.sources = external.sources;
+            state.sources = metrics.sources.clone();
+            state.sources.extend(external.sources);
+            let hw = hardware.lock().unwrap().clone();
+            state.metrics.extend(hw.values);
+            state.sources.extend(hw.sources);
+            let sound = audio.snapshot(wants_audio);
+            state.metrics.extend(sound.values);
+            state.sources.extend(sound.sources);
             if let Some(l) = link.as_mut() {
                 let config = state.config.as_ref().unwrap();
                 let values: Vec<Value> = config
@@ -326,7 +362,7 @@ fn run(app: AppHandle, rx: mpsc::Receiver<Job>, shared: Arc<Mutex<Snapshot>>) {
                         } else {
                             state
                                 .metrics
-                                .get(&c.source)
+                                .get(&sample_key(c))
                                 .map(|v| json!(normalize(*v - c.input_min, c.scale - c.input_min)))
                                 .unwrap_or(Value::Null)
                         }

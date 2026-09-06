@@ -7,6 +7,7 @@
   import Inspector from './Inspector.svelte';
   import Calibration from './Calibration.svelte';
   import Settings from './Settings.svelte';
+  import UpdateProgress from './UpdateProgress.svelte';
   import ConnectBoard from './ConnectBoard.svelte';
   import { startUpdates, updates, newerVersion } from './updateState.svelte';
   let status = $state<Snapshot>(emptySnapshot()),
@@ -21,7 +22,7 @@
     revision = 0,
     timer: ReturnType<typeof setTimeout> | undefined;
   let saveTask: Promise<boolean> | null = null;
-  let installing = $derived(updates.busy && updates.stage !== 'Checking releases');
+  let installing = $derived(updates.busy && updates.operation !== 'check');
   async function send(op: string, data: Record<string, unknown> = {}) {
     return invoke('command', { command: { op, device: status.device, ...data } });
   }
@@ -207,7 +208,8 @@
 
 <div
   class="app-shell"
-  class:disconnected={!status.connected}
+  class:disconnected={!status.connected && !installing}
+  class:installing
   class:settings-open={settings}
   class:macos={navigator.userAgent.includes('Mac')}
 >
@@ -235,7 +237,9 @@
         >{:else}<div class="connection">
           <span class="small-dot" class:muted={!status.connected}></span>{status.connected
             ? 'USB connected'
-            : 'Looking for your board'}
+            : installing
+              ? 'Updating board'
+              : 'Looking for your board'}
         </div>{/if}
       <div class="header-divider"></div>
       <button
@@ -261,10 +265,13 @@
     </div>
   </header>
   <main>
-    <section class="board-panel" aria-label="Gauge outputs" inert={installing}>
-      <Board {config} {status} {selected} onselect={(n) => void select(n)} />
+    <section class="board-panel" aria-label="Gauge outputs">
+      <div class="board-content" inert={installing}>
+        <Board {config} {status} {selected} onselect={(n) => void select(n)} />
+      </div>
+      <UpdateProgress />
       <div class="disconnected-message" inert={status.connected}>
-        {#if !status.connected}<ConnectBoard />{/if}
+        {#if !status.connected && !installing}<ConnectBoard />{/if}
       </div>
       <div class="board-panel-foot" inert={!status.connected}>
         <span

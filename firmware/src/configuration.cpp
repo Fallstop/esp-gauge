@@ -23,9 +23,11 @@ bool configuration::valid(JsonVariantConst c) {
     if (!ch["min_duty"].isNull() &&
         (!ch["min_duty"].is<unsigned>() || ch["min_duty"].as<unsigned>() > ch["max_duty"].as<unsigned>()))
       return false;
-    for (const char *field : {"period_s", "phase_deg", "input_min"})
+    for (const char *field : {"period_s", "phase_deg", "input_min", "curve"})
       if (!ch[field].isNull() && (!ch[field].is<double>() || !isfinite(ch[field].as<double>())))
         return false;
+    if (!ch["curve"].isNull() && fabs(ch["curve"].as<double>()) > 4)
+      return false;
     if ((!ch["period_s"].isNull() &&
          (ch["period_s"].as<double>() < .1 || ch["period_s"].as<double>() > 86400)) ||
         (!ch["phase_deg"].isNull() &&
@@ -51,6 +53,7 @@ void configuration::apply() {
     out.maxDuty = c["max_duty"];
     out.response = c["response_ms"];
     out.reverse = c["reverse"];
+    out.curve = c["curve"] | 0.0f;
     board::state.sources[i] = c["source"].as<String>();
     board::state.scales[i] = c["scale"];
     board::state.inputMin[i] = c["input_min"] | 0.0f;

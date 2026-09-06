@@ -1,0 +1,232 @@
+.port-heading {
+  font: 500 30px/1.15 var(--mono);
+  letter-spacing: -1.5px;
+  color: var(--mint);
+  animation: port-arrive 350ms ease-out;
+}
+@keyframes port-arrive {
+  from {
+    transform: translateX(-8px);
+    opacity: 0.3;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.source-trigger small {
+  display: block;
+  font: 9px var(--mono);
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.source-picker {
+  background: var(--panel);
+  padding: 12px;
+}
+.picker-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2px 12px;
+  font-size: 14px;
+}
+.picker-title button,
+.update-heading button {
+  font-size: 22px;
+  padding: 0 5px;
+  color: var(--muted);
+}
+.source-categories {
+  display: grid;
+  gap: 0;
+  overflow-y: auto;
+}
+.source-categories button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  padding: 18px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.source-categories strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+.source-categories small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 6px;
+}
+.source-categories button:hover:not(:disabled),
+.source-categories button:focus-visible {
+  background: #b8d5c413;
+  color: var(--mint);
+}
+.picker-foot {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: auto;
+  padding: 14px 10px 0;
+}
+.picker-back {
+  text-align: left;
+  font-size: 11px;
+  color: var(--mint);
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.source-group {
+  font-size: 11px;
+  color: var(--mint);
+}
+.source-options button {
+  padding: 12px 9px;
+  font-size: 12px;
+}
+.source-settings {
+  padding-left: 12px;
+  border-left: 2px solid var(--line);
+}
+.product-tracker form {
+  display: flex;
+  gap: 6px;
+}
+.product-tracker input {
+  min-width: 0;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--control-line);
+  border-radius: 4px;
+  padding: 9px;
+  font-size: 11px;
+}
+.search-product {
+  border: 1px solid var(--control-line);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 11px;
+}
+.selected-product {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0 0 10px;
+  color: var(--mint);
+}
+.product-tracker label:not(:first-child) {
+  margin-top: 18px;
+}
+.product-results {
+  max-height: 210px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  margin-top: 8px;
+}
+.product-results button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 11px;
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.product-results button:hover {
+  background: #b8d5c413;
+}
+.board-content {
+  display: contents;
+}
+.board-update {
+  width: min(100%, 520px);
+  align-self: center;
+  margin: 10px 0 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--control-line);
+  border-left: 3px solid var(--mint);
+  background: var(--panel);
+  flex: none;
+}
+.update-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+.update-heading .mono {
+  color: var(--mint);
+  font-size: 12px;
+}
+.board-update p {
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 8px 0 10px;
+  overflow-wrap: anywhere;
+}
+.board-update small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+.board-update progress {
+  width: 100%;
+  height: 5px;
+  display: block;
+  appearance: none;
+  border: 0;
+  background: var(--line);
+  accent-color: var(--mint);
+}
+.board-update progress::-webkit-progress-bar {
+  background: var(--line);
+}
+.board-update progress::-webkit-progress-value {
+  background: var(--mint);
+  transition: width 150ms;
+}
+.board-update progress::-moz-progress-bar {
+  background: var(--mint);
+}
+.board-update progress:indeterminate {
+  background: linear-gradient(90deg, var(--line) 0%, var(--mint) 50%, var(--line) 100%);
+  background-size: 200% 100%;
+  animation: update-working 1.5s linear infinite;
+}
+.board-update progress:indeterminate::-webkit-progress-bar {
+  background: transparent;
+}
+@keyframes update-working {
+  to {
+    background-position: -200% 0;
+  }
+}
+.update-failed {
+  border-left-color: #dba59b;
+}
+.installing .board-scene {
+  width: min(100%, calc((100dvh - 330px) * 1.35135));
+}
+.installing .board-panel-foot,
+.installing .computer-strip {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .port-heading,
+  .board-update progress:indeterminate {
+    animation: none;
+  }
+}
+
+.installing .port,
+.installing .traces,
+.installing .header-targets {
+  visibility: hidden;
+}
+.disconnected .board-panel:has(.board-update) .board-scene {
+  width: min(100%, 540px, calc((100dvh - 450px) * 1.35135));
+}

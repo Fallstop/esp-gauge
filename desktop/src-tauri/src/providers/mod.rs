@@ -1,17 +1,20 @@
 mod agents;
 mod local_data;
+pub mod products;
 mod quotas;
 mod rpc;
-mod supertracker;
+pub mod supertracker;
 
 use crate::metrics::Samples;
 use serde::Serialize;
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc, Mutex,
-};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+#[derive(Clone, Serialize)]
+pub struct Choice {
+    pub id: String,
+    pub name: String,
+}
 #[derive(Clone, Serialize)]
 pub struct Source {
     pub id: String,
@@ -21,6 +24,7 @@ pub struct Source {
     pub scale: f64,
     pub minimum: f64,
     pub description: String,
+    pub options: Vec<Choice>,
 }
 impl Source {
     pub fn new(
@@ -39,6 +43,7 @@ impl Source {
             scale,
             minimum: 0.0,
             description: description.into(),
+            options: Vec::new(),
         }
     }
 }
@@ -63,14 +68,14 @@ pub struct Providers {
     local: Arc<Mutex<Feed>>,
     quotas: Arc<Mutex<Feed>>,
     public: Arc<Mutex<Feed>>,
-    wants_public: Arc<AtomicBool>,
+    wants_public: Arc<Mutex<Vec<crate::model::Channel>>>,
 }
 impl Providers {
     pub fn start() -> Self {
         let local = Arc::new(Mutex::new(Feed::default()));
         let quotas = Arc::new(Mutex::new(Feed::default()));
         let public = Arc::new(Mutex::new(supertracker::catalog()));
-        let wants_public = Arc::new(AtomicBool::new(false));
+        let wants_public = Arc::new(Mutex::new(Vec::<crate::model::Channel>::new()));
         let shared = local.clone();
         std::thread::spawn(move || {
             let mut agents = agents::Agents::new();
@@ -95,12 +100,40 @@ impl Providers {
         let shared = public.clone();
         let wanted = wants_public.clone();
         std::thread::spawn(move || {
-            let mut last = std::time::Instant::now() - Duration::from_secs(600);
+            let mut cache = std::collections::BTreeMap::<
+                String,
+                (std::time::Instant, crate::metrics::Samples),
+            >::new();
             loop {
-                if wanted.load(Ordering::Relaxed) && last.elapsed() >= Duration::from_secs(300) {
-                    *shared.lock().unwrap() = supertracker::sample();
-                    last = std::time::Instant::now();
+                let channels = wanted.lock().unwrap().clone();
+                let mut next = supertracker::catalog();
+                let mut active = std::collections::BTreeSet::new();
+                for channel in &channels {
+                    let key = if channel.source == "supertracker_product" {
+                        crate::model::sample_key(channel)
+                    } else {
+                        "index".into()
+                    };
+                    if !active.insert(key.clone()) {
+                        continue;
+                    }
+                    if cache
+                        .get(&key)
+                        .is_none_or(|(at, _)| at.elapsed() >= Duration::from_secs(300))
+                    {
+                        let values = if key == "index" {
+                            supertracker::sample().values
+                        } else {
+                            products::sample(channel).into_iter().collect()
+                        };
+                        cache.insert(key.clone(), (std::time::Instant::now(), values));
+                    }
+                    if let Some((_, values)) = cache.get(&key) {
+                        next.values.extend(values.clone());
+                    }
                 }
+                cache.retain(|key, _| active.contains(key));
+                *shared.lock().unwrap() = next;
                 std::thread::sleep(Duration::from_secs(2));
             }
         });
@@ -111,8 +144,13 @@ impl Providers {
             wants_public,
         }
     }
-    pub fn snapshot(&self, public: bool) -> Feed {
-        self.wants_public.store(public, Ordering::Relaxed);
+    pub fn snapshot(&self, config: Option<&crate::model::Config>) -> Feed {
+        *self.wants_public.lock().unwrap() = config
+            .into_iter()
+            .flat_map(|c| &c.channels)
+            .filter(|c| c.enabled && c.source.starts_with("supertracker_"))
+            .cloned()
+            .collect();
         let mut feed = self.local.lock().unwrap().clone();
         feed.merge(&self.quotas.lock().unwrap());
         feed.merge(&self.public.lock().unwrap());

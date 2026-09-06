@@ -12,34 +12,51 @@ use tauri::{AppHandle, Manager};
 struct Progress {
     app: AppHandle,
     total: usize,
+    completed: usize,
+    current_size: usize,
     part: usize,
+    bytes_total: usize,
+    segments: Vec<(u32, usize)>,
 }
 impl ProgressCallbacks for Progress {
     fn init(&mut self, addr: u32, total: usize) {
         self.total = total;
-        self.part = match addr {
-            0x1000 => 0,
-            0x8000 => 1,
-            0xe000 => 2,
-            _ => 3,
-        };
-    }
-    fn update(&mut self, current: usize) {
-        let percent = ((self.part as f64 + current as f64 / self.total.max(1) as f64) / 4.0
-            * 100.0)
-            .min(100.0);
+        self.current_size = self
+            .segments
+            .iter()
+            .find(|(offset, _)| *offset == addr)
+            .map(|(_, size)| *size)
+            .unwrap_or(0);
         self.app
             .state::<Updates>()
-            .progress(&self.app, "Writing firmware", percent);
+            .waiting(&self.app, "Preparing flash segment");
+    }
+    fn update(&mut self, current: usize) {
+        let bytes = self.completed as f64
+            + self.current_size as f64 * (current as f64 / self.total.max(1) as f64).min(1.0);
+        let percent = 25.0 + bytes / self.bytes_total.max(1) as f64 * 70.0;
+        self.app
+            .state::<Updates>()
+            .progress(&self.app, "Writing firmware", percent.min(95.0));
     }
     fn verifying(&mut self) {
+        self.app
+            .state::<Updates>()
+            .waiting(&self.app, "Verifying firmware on the board");
+    }
+    fn finish(&mut self, _: bool) {
+        self.completed += self
+            .segments
+            .get(self.part)
+            .map(|(_, size)| *size)
+            .unwrap_or(0);
+        self.part += 1;
         self.app.state::<Updates>().progress(
             &self.app,
-            "Verifying firmware",
-            (self.part + 1) as f64 * 25.0,
+            "Firmware segment verified",
+            25.0 + self.completed as f64 / self.bytes_total.max(1) as f64 * 70.0,
         );
     }
-    fn finish(&mut self, _: bool) {}
 }
 struct Resume(Service);
 impl Drop for Resume {
@@ -73,7 +90,7 @@ pub fn install(
         return Err("The USB device changed.".into());
     }
     app.state::<Updates>()
-        .progress(app, "Connecting to bootloader", 0.0);
+        .waiting(app, "Connecting to the board’s bootloader");
     let port = serialport::new(path, 115200)
         .timeout(Duration::from_secs(3))
         .dtr_on_open(false)
@@ -120,13 +137,21 @@ pub fn install(
             &mut Progress {
                 app: app.clone(),
                 total: 1,
+                completed: 0,
+                current_size: 0,
                 part: 0,
+                bytes_total: data.iter().map(Vec::len).sum(),
+                segments: firmware
+                    .segments
+                    .iter()
+                    .map(|s| (s.offset, s.size))
+                    .collect(),
             },
         )
         .map_err(|e| format!("{e}. Reconnect the board and retry installation."))?;
     drop(flasher);
     app.state::<Updates>()
-        .progress(app, "Restarting board", 100.0);
+        .waiting(app, "Restarting board and checking its version");
     let mut link = transport::Link::probe(path)?;
     if link.firmware != firmware.version {
         return Err("The board did not start the expected firmware. Retry installation.".into());

@@ -41,27 +41,57 @@ pub fn client() -> Result<Client, String> {
         .map_err(|e| e.to_string())
 }
 pub fn bounded_get(client: &Client, url: &str, limit: usize) -> Result<Vec<u8>, String> {
+    bounded_get_progress(client, url, limit, &mut |_| {})
+}
+fn bounded_get_progress(
+    client: &Client,
+    url: &str,
+    limit: usize,
+    progress: &mut dyn FnMut(usize),
+) -> Result<Vec<u8>, String> {
     let response = client.get(url).send().map_err(|e| e.to_string())?;
     if response.status() == 404 {
         return Err("No published release is available yet.".into());
     }
-    let response = response.error_for_status().map_err(|e| e.to_string())?;
+    let mut response = response.error_for_status().map_err(|e| e.to_string())?;
+    read_download(&mut response, limit, progress)
+}
+fn read_download(
+    response: &mut dyn Read,
+    limit: usize,
+    progress: &mut dyn FnMut(usize),
+) -> Result<Vec<u8>, String> {
     let mut bytes = Vec::new();
-    response
-        .take(limit as u64 + 1)
-        .read_to_end(&mut bytes)
-        .map_err(|e| e.to_string())?;
-    if bytes.len() > limit {
-        return Err("Release download exceeded its size limit.".into());
+    let mut chunk = [0u8; 16 * 1024];
+    loop {
+        let length = response.read(&mut chunk).map_err(|e| e.to_string())?;
+        if length == 0 {
+            break;
+        }
+        if bytes.len() + length > limit {
+            return Err("Release download exceeded its size limit.".into());
+        }
+        bytes.extend_from_slice(&chunk[..length]);
+        progress(bytes.len());
     }
     Ok(bytes)
 }
+
 impl Release {
     pub fn latest(client: &Client) -> Result<Self, String> {
         serde_json::from_slice(&bounded_get(client, RELEASE_API, 512 * 1024)?)
             .map_err(|e| e.to_string())
     }
     pub fn asset(&self, client: &Client, name: &str, limit: usize) -> Result<Vec<u8>, String> {
+        self.asset_progress(client, name, limit, &mut |_| {})
+    }
+    fn asset_progress(
+        &self,
+        client: &Client,
+        name: &str,
+        limit: usize,
+        progress: &mut dyn FnMut(usize),
+    ) -> Result<Vec<u8>, String> {
         let asset = self
             .assets
             .iter()
@@ -73,7 +103,7 @@ impl Release {
         {
             return Err("Release asset points outside this release.".into());
         }
-        bounded_get(client, &asset.browser_download_url, limit)
+        bounded_get_progress(client, &asset.browser_download_url, limit, progress)
     }
     pub fn firmware(&self, client: &Client) -> Result<Firmware, String> {
         let data = self.asset(client, "firmware.json", 16384)?;
@@ -141,11 +171,21 @@ impl Firmware {
         }
         Ok(())
     }
-    pub fn download(&self, release: &Release, client: &Client) -> Result<Vec<Vec<u8>>, String> {
+    pub fn download(
+        &self,
+        release: &Release,
+        client: &Client,
+        mut progress: impl FnMut(usize, usize),
+    ) -> Result<Vec<Vec<u8>>, String> {
+        let total = self.segments.iter().map(|s| s.size).sum();
+        let mut completed = 0;
         self.segments
             .iter()
             .map(|segment| {
-                let bytes = release.asset(client, &segment.name, segment.size)?;
+                let bytes =
+                    release.asset_progress(client, &segment.name, segment.size, &mut |n| {
+                        progress(completed + n, total)
+                    })?;
                 if bytes.len() != segment.size
                     || format!("{:x}", Sha256::digest(&bytes)) != segment.sha256
                 {
@@ -154,6 +194,7 @@ impl Firmware {
                         segment.name
                     ));
                 }
+                completed += bytes.len();
                 Ok(bytes)
             })
             .collect()
@@ -162,6 +203,33 @@ impl Firmware {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn download_progress_counts_bytes_and_rejects_oversized_reads() {
+        let bytes = vec![42; 50_000];
+        let mut positions = Vec::new();
+        assert_eq!(
+            read_download(&mut bytes.as_slice(), bytes.len(), &mut |n| positions
+                .push(n))
+            .unwrap(),
+            bytes
+        );
+        assert_eq!(positions.last(), Some(&50_000));
+        assert!(positions.len() > 1);
+        assert!(positions.windows(2).all(|pair| pair[0] < pair[1]));
+        assert!(read_download(&mut bytes.as_slice(), bytes.len() - 1, &mut |_| {}).is_err());
+    }
+    #[test]
+    fn interrupted_download_does_not_report_completion() {
+        struct Interrupted;
+        impl Read for Interrupted {
+            fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
+                Err(std::io::Error::other("USB-independent network failure"))
+            }
+        }
+        let mut calls = 0;
+        assert!(read_download(&mut Interrupted, 100, &mut |_| calls += 1).is_err());
+        assert_eq!(calls, 0);
+    }
     #[test]
     fn firmware_cannot_write_into_nvs_or_unknown_regions() {
         let mut m = Firmware {

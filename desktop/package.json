@@ -1,13 +1,14 @@
 {
   "name": "esp-gauge",
-  "version": "2.2.4",
+  "version": "2.3.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "svelte-check --tsconfig ./tsconfig.json && vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test": "playwright test"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.2",
@@ -16,6 +17,7 @@
     "svelte": "^5.57.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@tauri-apps/cli": "^2.11.4",
     "prettier": "^3.9.6",
