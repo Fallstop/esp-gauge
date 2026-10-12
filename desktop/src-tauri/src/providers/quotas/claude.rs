@@ -2,7 +2,7 @@ use super::local;
 use crate::providers::{rpc, Feed, Source};
 use serde_json::Value;
 use std::{
-    path::{Path, PathBuf},
+    path::PathBuf,
     time::{Duration, Instant, SystemTime},
 };
 
@@ -224,12 +224,14 @@ fn claude_token() -> Result<(String, Option<i64>), Failure> {
     } else {
         #[cfg(target_os = "macos")]
         {
-            rpc::bounded_output(rpc::quiet_command(Path::new("/usr/bin/security")).args([
-                "find-generic-password",
-                "-s",
-                "Claude Code-credentials",
-                "-w",
-            ]))
+            rpc::bounded_output(
+                rpc::quiet_command(std::path::Path::new("/usr/bin/security")).args([
+                    "find-generic-password",
+                    "-s",
+                    "Claude Code-credentials",
+                    "-w",
+                ]),
+            )
             .ok_or(login)?
         }
         #[cfg(not(target_os = "macos"))]
