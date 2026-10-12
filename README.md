@@ -2,15 +2,15 @@
 
 A six-channel physical resource monitor. Tauri 2 + Rust, Svelte, your PCB’s Blender linework, and ESP32 firmware. No Electron or bundled browser. System metrics are sampled by native libraries on macOS, Windows and Linux.
 
-Click a physical header, calibrate the gauge with a live slider, and choose a source. Changes are stored on the board automatically. Linear, exponential and logarithmic scales control how readings move the needle; curved scales require firmware 2.3 or newer. Closing the window keeps the monitor in the tray; **Pause** rests the needles, and **Quit** ends the connection. **Start at login** is optional in settings.
+Click a physical header, calibrate the gauge with a live slider, and choose a source. Changes are stored on the board automatically. Linear, exponential and logarithmic scales control how readings move the needle; curved scales require firmware 2.3 or newer. Closing the window keeps the monitor in the tray (menu bar on macOS) and unloads the interface, so it uses no CPU and leaves the Dock until you open it again; **Pause** rests the needles, and **Quit** ends the connection. **Start at login** is optional in settings.
 
 ## Download
 
-| Your computer | Install ESP Gauge 2.3.0 |
+| Your computer | Install ESP Gauge 2.3.1 |
 | --- | --- |
-| Windows 10 / 11 (x64) | [Windows installer, including the USB driver](https://github.com/Fallstop/esp-gauge/releases/download/v2.3.0/ESP-Gauge-2.3.0-Windows-x64-Setup.exe) |
-| macOS 14.6+ (Apple Silicon) | [macOS disk image](https://github.com/Fallstop/esp-gauge/releases/download/v2.3.0/ESP-Gauge-2.3.0-macOS-Apple-Silicon.dmg) |
-| Linux (x64) | [Linux AppImage](https://github.com/Fallstop/esp-gauge/releases/download/v2.3.0/ESP-Gauge-2.3.0-Linux-x64.AppImage) |
+| Windows 10 / 11 (x64) | [Windows installer, including the USB driver](https://github.com/Fallstop/esp-gauge/releases/download/v2.3.1/ESP-Gauge-2.3.1-Windows-x64-Setup.exe) |
+| macOS 14.6+ (Apple Silicon) | [macOS disk image](https://github.com/Fallstop/esp-gauge/releases/download/v2.3.1/ESP-Gauge-2.3.1-macOS-Apple-Silicon.dmg) |
+| Linux (x64) | [Linux AppImage](https://github.com/Fallstop/esp-gauge/releases/download/v2.3.1/ESP-Gauge-2.3.1-Linux-x64.AppImage) |
 
 [Release notes and other package formats](https://github.com/Fallstop/esp-gauge/releases/latest). Existing users can update from **Settings → Updates**. The `.sig`, `.json`, `.bin`, and `.app.tar.gz` files are for automatic updates and firmware installation.
 
@@ -23,7 +23,7 @@ Click a physical header, calibrate the gauge with a live slider, and choose a so
 - Codex: working agents, completed turns, CLI sessions/memory, account tokens and the quota windows your account actually reports.
 - Claude Code: CLI sessions/memory and five-hour/weekly subscription usage with an existing, valid OAuth login.
 - OpenCode: CLI sessions/memory, today's output tokens and recorded cost estimate.
-- codeslop / T3 Code: automatically pairs with the local server for working agents, tasks needing attention, completed turns, tool calls and context-window usage.
+- codeslop / T3 Code: automatically pairs with the local server for working agents, tasks needing attention, completed turns, tool calls, context-window usage, active subagents, queued messages and output tokens.
 - [Super Tracker](https://supertracker.nz): NZ food-price nowcast, monthly/yearly movement, and individual product prices with optional store locking. Uses the production public API, refreshed every five minutes while assigned to a gauge.
 
 The source picker starts with four categories: **This computer**, **ESP32 board**, **AI tools**, and **Prices**. Search spans every category. **System volume** follows the volume setting, even in silence; **Audio level** is a separate playback meter. Audio capture runs only for an assigned gauge while the board is connected and unpaused. It never saves or uploads audio. macOS asks for system audio access and needs macOS 14.6 or newer. Linux playback metering requires PulseAudio or PipeWire’s PulseAudio service. On macOS, duplex audio devices are left unavailable to avoid capturing a microphone.

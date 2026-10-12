@@ -1,15 +1,15 @@
-use super::{local_data, rpc, Feed, Source};
+use super::{codeslop, local_data, rpc, Feed, Source};
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind};
 
 pub struct Agents {
     system: System,
-    server: local_data::LocalServer,
+    server: codeslop::LocalServer,
 }
 impl Agents {
     pub fn new() -> Self {
         Self {
             system: System::new(),
-            server: local_data::LocalServer::default(),
+            server: codeslop::LocalServer::default(),
         }
     }
     pub fn sample(&mut self) -> Feed {
@@ -50,11 +50,14 @@ impl Agents {
                             s.ends_with(&format!("/{provider}.js"))
                                 || s.ends_with(&format!("\\{provider}.js"))
                         });
-                    let is_wrapper_parent = self.system.processes().values().any(|child| {
-                        child.parent() == Some(p.pid())
-                            && child.name().to_string_lossy().to_lowercase() == provider
-                    });
-                    (is_native || (wrapper && !is_wrapper_parent))
+                    // Only wrappers need the child scan; doing it for every process is O(n²).
+                    let is_wrapper_parent = || {
+                        self.system.processes().values().any(|child| {
+                            child.parent() == Some(p.pid())
+                                && child.name().to_string_lossy().to_lowercase() == provider
+                        })
+                    };
+                    (is_native || (wrapper && !is_wrapper_parent()))
                         && !args.iter().any(|a| {
                             ["app-server", "mcp-server", "--version", "--help"]
                                 .contains(&a.as_ref())
@@ -83,7 +86,7 @@ impl Agents {
             }
         }
         local_data::codex(&mut feed, &home);
-        local_data::codeslop(&mut feed, &home, &self.system, &mut self.server);
+        codeslop::codeslop(&mut feed, &home, &self.system, &mut self.server);
         local_data::opencode(&mut feed, &home);
         feed
     }

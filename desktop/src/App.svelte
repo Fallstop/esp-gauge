@@ -183,6 +183,22 @@
       if (disposed) fn();
       else unlistenQuit = fn;
     });
+    let unlistenClose: () => void = () => {};
+    let closeFailed = false;
+    void listen('close-requested', async () => {
+      commitEditing();
+      clearTimeout(timer);
+      if (calibrating) await cancel();
+      // A failed save keeps the window open with its error once; closing again discards the edit.
+      if (pending && !(await save()) && !closeFailed) {
+        closeFailed = true;
+        return;
+      }
+      await invoke('close_window');
+    }).then((fn) => {
+      if (disposed) fn();
+      else unlistenClose = fn;
+    });
     const visible = () => {
       if (document.hidden) {
         commitEditing();
@@ -199,6 +215,7 @@
       stopUpdates();
       unlisten();
       unlistenQuit();
+      unlistenClose();
       clearTimeout(timer);
       document.removeEventListener('visibilitychange', visible);
     };

@@ -3,6 +3,7 @@
     "windows": [
       {
         "label": "main",
+        "create": false,
         "title": "ESP Gauge",
         "width": 1160,
         "height": 800,

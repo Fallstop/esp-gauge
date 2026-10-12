@@ -26,6 +26,8 @@ use tauri::{
 use tauri_plugin_autostart::ManagerExt;
 use worker::{Service, Snapshot};
 static EXIT_READY: AtomicBool = AtomicBool::new(false);
+// Set while the gauge window closes itself, so the last-window exit request keeps the tray running.
+static CLOSING: AtomicBool = AtomicBool::new(false);
 
 #[tauri::command]
 fn login_start(app: tauri::AppHandle, enabled: Option<bool>) -> Result<bool, String> {
@@ -46,20 +48,51 @@ fn snapshot(service: State<'_, Service>) -> Snapshot {
     service.state.lock().unwrap().clone()
 }
 #[tauri::command]
-fn show_window(app: tauri::AppHandle) {
+async fn show_window(app: tauri::AppHandle) {
     show(&app);
+}
+// Destroys the webview rather than hiding it, so a closed window costs no CPU or memory.
+#[tauri::command]
+fn close_window(app: tauri::AppHandle, service: State<'_, Service>) {
+    if let Some(window) = app.get_webview_window("main") {
+        CLOSING.store(true, Ordering::SeqCst);
+        let _ = window.destroy();
+    }
+    #[cfg(target_os = "macos")]
+    let _ = app.set_dock_visibility(false);
+    let s = service.inner().clone();
+    std::thread::spawn(move || {
+        let device = s.state.lock().unwrap().device.clone();
+        let _ = s.execute(json!({"op":"calibrate_end","device":device}));
+    });
 }
 #[tauri::command]
 async fn quit(app: tauri::AppHandle, service: State<'_, Service>) -> Result<(), String> {
+    let service = service.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || exit(&app, &service))
+        .await
+        .map_err(|e| e.to_string())?
+}
+fn exit(app: &tauri::AppHandle, service: &Service) -> Result<(), String> {
     if app.state::<updates::Updates>().is_busy() {
         return Err("Wait for the update to finish before quitting.".into());
     }
-    let service = service.inner().clone();
-    let _ = tauri::async_runtime::spawn_blocking(move || service.execute(json!({"op":"release"})))
-        .await;
+    let _ = service.execute(json!({"op":"release"}));
     EXIT_READY.store(true, Ordering::SeqCst);
     app.exit(0);
     Ok(())
+}
+// The open window flushes unsaved edits before quitting; with no window there is nothing to flush.
+fn request_quit(app: &tauri::AppHandle) {
+    if app.get_webview_window("main").is_some() {
+        let _ = tauri::Emitter::emit(app, "quit-requested", ());
+    } else {
+        let app = app.clone();
+        std::thread::spawn(move || {
+            let service = app.state::<Service>().inner().clone();
+            let _ = exit(&app, &service);
+        });
+    }
 }
 #[tauri::command]
 async fn command(
@@ -76,11 +109,36 @@ async fn command(
         .map_err(|e| e.to_string())?
 }
 fn show(app: &tauri::AppHandle) {
-    if let Some(w) = app.get_webview_window("main") {
-        let _ = w.show();
-        let _ = w.unminimize();
-        let _ = w.set_focus();
-    }
+    CLOSING.store(false, Ordering::SeqCst);
+    #[cfg(target_os = "macos")]
+    let _ = app.set_dock_visibility(true);
+    let window = match app.get_webview_window("main") {
+        Some(w) => w,
+        None => match open_window(app) {
+            Ok(w) => w,
+            Err(e) => {
+                eprintln!("Unable to open the gauge window: {e}");
+                return;
+            }
+        },
+    };
+    let _ = window.show();
+    let _ = window.unminimize();
+    let _ = window.set_focus();
+}
+fn open_window(app: &tauri::AppHandle) -> tauri::Result<tauri::WebviewWindow> {
+    let config = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|w| w.label == "main")
+        .expect("main window config")
+        .clone();
+    let window = tauri::WebviewWindowBuilder::from_config(app, &config)?.build()?;
+    #[cfg(windows)]
+    let _ = window_layout::fit_work_area(&window);
+    Ok(window)
 }
 fn main() {
     #[cfg(windows)]
@@ -113,10 +171,6 @@ fn main() {
         .setup(|app| {
             #[cfg(windows)]
             std::thread::spawn(windows_driver::remove_legacy_shortcut);
-            #[cfg(windows)]
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window_layout::fit_work_area(&window);
-            }
             app.manage(Service::start(app.handle().clone()));
             #[cfg(target_os = "macos")]
             mac_menu::install(app)?;
@@ -156,35 +210,32 @@ fn main() {
                             );
                         });
                     }
-                    "quit" => {
-                        let _ = tauri::Emitter::emit(app, "quit-requested", ());
-                    }
+                    "quit" => request_quit(app),
                     _ => {}
                 })
                 .build(app)?;
             if std::env::args().any(|arg| arg == "--background") {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.hide();
-                }
+                #[cfg(target_os = "macos")]
+                let _ = app.handle().set_dock_visibility(false);
+            } else {
+                show(app.handle());
             }
             Ok(())
         })
         .on_menu_event(|app, event| {
             if event.id.as_ref() == "app_quit" {
-                let _ = tauri::Emitter::emit(app, "quit-requested", ());
+                request_quit(app);
             } else if event.id.as_ref() == "app_open" {
                 show(app);
             }
         })
         .on_window_event(|window, event| {
+            // The page saves pending edits, then calls close_window.
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                api.prevent_close();
-                let _ = window.hide();
-                let s = window.state::<Service>().inner().clone();
-                std::thread::spawn(move || {
-                    let device = s.state.lock().unwrap().device.clone();
-                    let _ = s.execute(json!({"op":"calibrate_end","device":device}));
-                });
+                if !CLOSING.load(Ordering::SeqCst) {
+                    api.prevent_close();
+                    let _ = tauri::Emitter::emit(window, "close-requested", ());
+                }
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -200,14 +251,19 @@ fn main() {
             command,
             login_start,
             show_window,
+            close_window,
             quit
         ])
         .build(tauri::generate_context!())
         .expect("Unable to start ESP Gauge")
         .run(|app, event| match event {
-            tauri::RunEvent::ExitRequested { api, .. } if !EXIT_READY.load(Ordering::SeqCst) => {
+            tauri::RunEvent::ExitRequested { code, api, .. }
+                if !EXIT_READY.load(Ordering::SeqCst) =>
+            {
                 api.prevent_exit();
-                let _ = tauri::Emitter::emit(app, "quit-requested", ());
+                if !(code.is_none() && CLOSING.swap(false, Ordering::SeqCst)) {
+                    request_quit(app);
+                }
             }
             #[cfg(target_os = "macos")]
             tauri::RunEvent::Reopen { .. } => show(app),

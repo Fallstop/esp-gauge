@@ -1,4 +1,5 @@
 mod agents;
+mod codeslop;
 mod local_data;
 pub mod products;
 mod quotas;
@@ -85,17 +86,21 @@ impl Providers {
             }
         });
         let shared = quotas.clone();
-        std::thread::spawn(move || loop {
-            let mut next = quotas::sample();
-            let mut previous = shared.lock().unwrap();
-            for source in &previous.sources {
-                if !next.sources.iter().any(|s| s.id == source.id) {
-                    next.sources.push(source.clone());
+        std::thread::spawn(move || {
+            let mut sampler = quotas::Quotas::default();
+            loop {
+                let mut next = sampler.sample();
+                let mut previous = shared.lock().unwrap();
+                for source in &previous.sources {
+                    if !next.sources.iter().any(|s| s.id == source.id) {
+                        next.sources.push(source.clone());
+                    }
                 }
+                *previous = next;
+                drop(previous);
+                // Each provider keeps its own, slower schedule; this only bounds reaction time.
+                std::thread::sleep(Duration::from_secs(60));
             }
-            *previous = next;
-            drop(previous);
-            std::thread::sleep(Duration::from_secs(60));
         });
         let shared = public.clone();
         let wanted = wants_public.clone();
@@ -160,7 +165,7 @@ impl Providers {
 
 pub fn diagnose() -> Feed {
     let mut feed = agents::Agents::new().sample();
-    feed.merge(&quotas::sample());
+    feed.merge(&quotas::Quotas::default().sample());
     feed.merge(&supertracker::catalog());
     feed
 }
